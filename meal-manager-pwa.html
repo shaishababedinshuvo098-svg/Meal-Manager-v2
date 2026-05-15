@@ -1,0 +1,2386 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#060d0f" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="মিল ম্যানেজার" />
+  <title>🏠 মিল ম্যানেজার Pro</title>
+
+  <!-- PWA Manifest inline -->
+  <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjogIuCmruCmv+CmsiDgpq7gp43gpq/gpr7gpqjgp4fgppzgpr7gprAgUHJvIiwgInNob3J0X25hbWUiOiAi4Kau4Ka/4KayIOCmruCnjeCmr+CmvuCmqOCnh+CmnOCmvuCmsCIsICJkZXNjcmlwdGlvbiI6ICJTaGFpc2hhYiBBYmVkaW4t4KaP4KawIOCmruCmv+CmsiDgpq7gp43gpq/gpr7gpqjgp4fgppzgpq7gp4fgpqjgp43gpp8g4Ka44Ka/4Ka44KeN4Kaf4KeH4KauIiwgInN0YXJ0X3VybCI6ICIuIiwgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsICJvcmllbnRhdGlvbiI6ICJwb3J0cmFpdCIsICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwNjBkMGYiLCAidGhlbWVfY29sb3IiOiAiIzAwYzlhNyIsICJsYW5nIjogImJuIiwgImljb25zIjogW3sic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QjRiV3h1Y3owaWFIUjBjRG92TDNkM2R5NTNNeTV2Y21jdk1qQXdNQzl6ZG1jaUlIWnBaWGRDYjNnOUlqQWdNQ0F4T1RJZ01Ua3lJajQ4Y21WamRDQjNhV1IwYUQwaU1Ua3lJaUJvWldsbmFIUTlJakU1TWlJZ2NuZzlJak15SWlCbWFXeHNQU0lqTURCak9XRTNJaTgrUEhSbGVIUWdlVDBpTVRNd0lpQjRQU0l6TUNJZ1ptOXVkQzF6YVhwbFBTSXhNakFpSUdadmJuUXRabUZ0YVd4NVBTSnpaWEpwWmlJKzhKK1BvRHd2ZEdWNGRENDhMM04yWno0PSIsICJzaXplcyI6ICIxOTJ4MTkyIiwgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIsICJwdXJwb3NlIjogImFueSBtYXNrYWJsZSJ9XX0=" />
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- React + Babel from CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: #060d0f; }
+    #root { min-height: 100vh; }
+    /* iOS safe area */
+    body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+// ══════════════════════════════════════════════════════════════
+//  CONSTANTS
+// ══════════════════════════════════════════════════════════════
+const DAYS_BN = ["রবি","সোম","মঙ্গল","বুধ","বৃহঃ","শুক্র","শনি"];
+const MONTHS_BN = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
+const MEAL_RATES = { morning: 0.5, lunch: 1, dinner: 1 };
+const SPECIAL_LUNCH = 2.5;
+const OWNER = "Shaishab Abedin";
+const MEAL_RATE_WARNING_MIN = 36;
+const MEAL_RATE_WARNING_MAX = 39;
+
+// ══ Color Palette — Deep Teal / Emerald Professional ══
+const C = {
+  bg:        "#060d0f",
+  surface:   "#0c1a1f",
+  card:      "#112028",
+  border:    "#1a3540",
+  borderHi:  "#24505f",
+  primary:   "#00c9a7",   // teal-mint
+  secondary: "#0ea5e9",   // sky-blue
+  accent:    "#f59e0b",   // amber
+  danger:    "#ef4444",
+  success:   "#10b981",
+  warn:      "#f59e0b",
+  muted:     "#4a6572",
+  text:      "#d4e8ee",
+  textDim:   "#5e8494",
+  glow:      "rgba(0,201,167,0.18)",
+};
+
+// ══════════════════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════════════════
+const getTodayKey = () => new Date().toISOString().split("T")[0];
+const getMonthDates = (y, m) => {
+  const dates = [], days = new Date(y, m + 1, 0).getDate();
+  for (let d = 1; d <= days; d++) dates.push(`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`);
+  return dates;
+};
+const fmtDate = (d) => { const dt = new Date(d + "T00:00:00"); return `${dt.getDate()} ${MONTHS_BN[dt.getMonth()]}`; };
+const genId = () => Date.now() + Math.random();
+
+const initialMembers = Array.from({ length: 40 }, (_, i) => ({
+  id: i + 1, name: `সদস্য ${i + 1}`, room: `${i + 1}`,
+  activeMeals: { morning: true, lunch: true, dinner: true },
+  deposit: 0, depositHistory: [],
+}));
+
+const DEFAULT_INVENTORY = [
+  { id: 1, name: "তেল (সয়াবিন)", unit: "লিটার", quantity: 0, minAlert: 2 },
+  { id: 2, name: "লবণ", unit: "কেজি", quantity: 0, minAlert: 0.5 },
+  { id: 3, name: "চাল", unit: "কেজি", quantity: 0, minAlert: 5 },
+  { id: 4, name: "ডাল", unit: "কেজি", quantity: 0, minAlert: 1 },
+  { id: 5, name: "পেঁয়াজ", unit: "কেজি", quantity: 0, minAlert: 2 },
+  { id: 6, name: "রসুন", unit: "কেজি", quantity: 0, minAlert: 0.5 },
+  { id: 7, name: "আদা", unit: "কেজি", quantity: 0, minAlert: 0.2 },
+  { id: 8, name: "হলুদ গুঁড়া", unit: "গ্রাম", quantity: 0, minAlert: 100 },
+  { id: 9, name: "মরিচ গুঁড়া", unit: "গ্রাম", quantity: 0, minAlert: 100 },
+  { id: 10, name: "গ্যাস (সিলিন্ডার)", unit: "পিস", quantity: 0, minAlert: 1 },
+];
+
+// Chat suggestion prompts
+const CHAT_SUGGESTIONS = [
+  "তেল ৫ লিটার কিনলাম",
+  "কার কত বকেয়া?",
+  "মিল রেট কত?",
+  "হাতে কত টাকা?",
+  "সবার হিসাব দাও",
+  "কম মজুদ কী কী?",
+  "এই সপ্তাহে কত খরচ?",
+];
+
+// ══════════════════════════════════════════════════════════════
+//  MAIN COMPONENT
+// ══════════════════════════════════════════════════════════════
+function MealManagerPro({ initialSavedState, onSave }) {
+  // ── Helper to load saved state or use default ──
+  const ls = (key, def) => {
+    try { return initialSavedState?.[key] ?? def; } catch { return def; }
+  };
+  const [tab, setTab] = useState("dashboard");
+  const [members, setMembers] = useState(() => ls("members", initialMembers));
+  const [dailyRecords, setDailyRecords] = useState(() => ls("dailyRecords", {}));
+  const [groceries, setGroceries] = useState(() => ls("groceries", {}));
+  const [mealRate, setMealRate] = useState(() => ls("mealRate", 0));
+  const [selectedDate, setSelectedDate] = useState(getTodayKey());
+  const [specialWeekday, setSpecialWeekday] = useState(() => ls("specialWeekday", 5));
+  const [specialDistrib, setSpecialDistrib] = useState(() => ls("specialDistrib", {}));
+  const [editingMember, setEditingMember] = useState(null);
+  const [depositInput, setDepositInput] = useState({});
+  const [newMemberName, setNewMemberName] = useState("");
+  const [newMemberRoom, setNewMemberRoom] = useState("");
+  const [rateInput, setRateInput] = useState(() => ls("rateInput", 0));
+  const [notification, setNotification] = useState(null);
+
+  const [grocItem, setGrocItem] = useState("");
+  const [grocAmt, setGrocAmt] = useState("");
+  const [grocDate, setGrocDate] = useState(getTodayKey());
+
+  const [inventory, setInventory] = useState(() => ls("inventory", DEFAULT_INVENTORY));
+  const [invName, setInvName] = useState("");
+  const [invUnit, setInvUnit] = useState("");
+  const [invQty, setInvQty] = useState("");
+  const [invMin, setInvMin] = useState("");
+  const [invAdjId, setInvAdjId] = useState(null);
+  const [invAdjAmt, setInvAdjAmt] = useState("");
+  const [invAdjType, setInvAdjType] = useState("add");
+  const [showAddInvForm, setShowAddInvForm] = useState(false);
+
+  const [receipts, setReceipts] = useState(() => ls("receipts", []));
+  const [receiptDate, setReceiptDate] = useState(getTodayKey());
+  const [receiptNote, setReceiptNote] = useState("");
+  const [viewReceipt, setViewReceipt] = useState(null);
+  const receiptInputRef = useRef(null);
+
+  // Telegram Bot settings
+  const [telegramBotToken, setTelegramBotToken] = useState(() => ls("telegramBotToken", ""));
+  const [telegramChatId, setTelegramChatId] = useState(() => ls("telegramChatId", ""));
+  const [telegramSending, setTelegramSending] = useState(false);
+  const [showTgKeys, setShowTgKeys] = useState(false);
+
+  const [sdRoom, setSdRoom] = useState("");
+  const [sdCount, setSdCount] = useState("");
+  const [sdCollector, setSdCollector] = useState("");
+  const [sdDate, setSdDate] = useState(getTodayKey());
+
+  const [guestMeals, setGuestMeals] = useState(() => ls("guestMeals", {}));
+
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([{
+    role: "assistant",
+    text: `আস্সালামু আলাইকুম! আমি ${OWNER}-এর মিল ম্যানেজার AI সহকারী। 🤖\n\n━━━ আমি যা করতে পারি ━━━\n• ইনভেন্টরি আপডেট: "তেল ৫ লিটার কিনলাম"\n• হিসাব জিজ্ঞেস: "এই মাসে কার কত বকেয়া?"\n• মিল নিয়ন্ত্রণ: "রহিমের সকালের মিল বন্ধ কর"\n• বিশ্লেষণ: "মিল রেট কত হওয়া উচিত?"\n• যেকোনো ভাষায় কথা বলুন ✓\n\n⚠️ সতর্কতা: AI তথ্য ভুল হতে পারে। গুরুত্বপূর্ণ হিসাব নিজে যাচাই করুন।`
+  }]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const [showChatGuide, setShowChatGuide] = useState(false);
+
+  // ── Smart Calculator state ────────────────────────────────
+  const [calcDisplay, setCalcDisplay] = useState("0");
+  const [calcExpression, setCalcExpression] = useState("");
+  const [calcHistory, setCalcHistory] = useState(() => ls("calcHistory", []));
+  const [calcMode, setCalcMode] = useState("basic"); // basic | scientific | meal | split | emi | gst
+  const [calcSplitTotal, setCalcSplitTotal] = useState("");
+  const [calcSplitPeople, setCalcSplitPeople] = useState("");
+  const [calcMealUnits, setCalcMealUnits] = useState("");
+  const [calcMealRateInput, setCalcMealRateInput] = useState("");
+  const [calcWaiting, setCalcWaiting] = useState(false); // waiting for next operand
+  // EMI calculator state
+  const [emiPrincipal, setEmiPrincipal] = useState("");
+  const [emiRate, setEmiRate] = useState("");
+  const [emiMonths, setEmiMonths] = useState("");
+  // GST/VAT calculator state
+  const [gstAmount, setGstAmount] = useState("");
+  const [gstRate, setGstRate] = useState("15");
+  const [gstMode, setGstMode] = useState("add"); // add | remove
+
+  const [settingsTab, setSettingsTab] = useState("general");
+  const [aiProvider, setAiProvider] = useState(() => ls("aiProvider", "claude"));
+  const [geminiKey, setGeminiKey] = useState(() => ls("geminiKey", ""));
+  const [openaiKey, setOpenaiKey] = useState(() => ls("openaiKey", ""));
+  const [showKeys, setShowKeys] = useState(false);
+  const [aiTestStatus, setAiTestStatus] = useState({}); // {gemini: "ok"|"fail"|"testing", openai: ...}
+  const [aiTestMsg, setAiTestMsg] = useState({});
+
+  const chatEndRef = useRef(null);
+  const installPromptRef = useRef(null);
+  const [showInstallBanner, setShowInstallBanner] = React.useState(false);
+
+  // ── PWA Install prompt ────────────────────────────────────
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      installPromptRef.current = e;
+      setShowInstallBanner(true);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatMessages]);
+
+  // ── Auto-save to localStorage ─────────────────────────────
+  useEffect(() => {
+    const state = {
+      members, dailyRecords, groceries, mealRate, specialWeekday,
+      specialDistrib, rateInput, inventory, receipts, guestMeals,
+      telegramBotToken, telegramChatId, aiProvider, geminiKey, openaiKey,
+      calcHistory,
+    };
+    onSave && onSave(state);
+  }, [members, dailyRecords, groceries, mealRate, specialWeekday,
+      specialDistrib, rateInput, inventory, receipts, guestMeals,
+      telegramBotToken, telegramChatId, aiProvider, geminiKey, openaiKey,
+      calcHistory]);
+
+  // ── Notification ──────────────────────────────────────────
+  const notify = (msg, type = "success") => {
+    setNotification({ msg, type });
+    setTimeout(() => setNotification(null), 3500);
+  };
+
+  // ── Date/Meal helpers ─────────────────────────────────────
+  const isSpecialDay = (d) => new Date(d + "T00:00:00").getDay() === specialWeekday;
+  const getMealValueForDay = (d) => ({ morning: MEAL_RATES.morning, lunch: isSpecialDay(d) ? SPECIAL_LUNCH : MEAL_RATES.lunch, dinner: MEAL_RATES.dinner });
+
+  const getMemberMealsOnDate = (id, d) => {
+    const rec = dailyRecords[d];
+    if (rec && rec[id] !== undefined) return rec[id];
+    const m = members.find(x => x.id === id);
+    return m ? { ...m.activeMeals } : { morning: true, lunch: true, dinner: true };
+  };
+  const getGuestMealsOnDate = (id, d) => guestMeals[d]?.[id] || { morning: 0, lunch: 0, dinner: 0 };
+  const setGuestMealCount = (id, d, mealKey, delta) => {
+    setGuestMeals(prev => {
+      const dayData = prev[d] || {};
+      const memberData = dayData[id] || { morning: 0, lunch: 0, dinner: 0 };
+      const newVal = Math.max(0, (memberData[mealKey] || 0) + delta);
+      return { ...prev, [d]: { ...dayData, [id]: { ...memberData, [mealKey]: newVal } } };
+    });
+  };
+  const getMemberDailyMeals = (id, d) => {
+    const meals = getMemberMealsOnDate(id, d);
+    const guests = getGuestMealsOnDate(id, d);
+    const rates = getMealValueForDay(d);
+    let t = 0;
+    if (meals.morning) t += rates.morning + rates.morning * (guests.morning || 0);
+    if (meals.lunch)   t += rates.lunch   + rates.lunch   * (guests.lunch   || 0);
+    if (meals.dinner)  t += rates.dinner  + rates.dinner  * (guests.dinner  || 0);
+    return t;
+  };
+
+  const today = new Date();
+  const currentMonthDates = getMonthDates(today.getFullYear(), today.getMonth());
+
+  const totalMealsThisMonth = useMemo(() =>
+    currentMonthDates.reduce((s, d) => s + members.reduce((ms, m) => ms + getMemberDailyMeals(m.id, d), 0), 0),
+    [members, dailyRecords, specialWeekday]
+  );
+  const totalGroceriesThisMonth = useMemo(() =>
+    currentMonthDates.reduce((sum, d) => sum + (groceries[d] || []).reduce((s, i) => s + i.amount, 0), 0),
+    [groceries]
+  );
+  const totalCostThisMonth = totalMealsThisMonth * mealRate + totalGroceriesThisMonth;
+  const costPerMealUnit = totalMealsThisMonth > 0 ? totalCostThisMonth / totalMealsThisMonth : 0;
+  const totalDeposit = members.reduce((s, m) => s + m.deposit, 0);
+  const cashInHand = totalDeposit - totalCostThisMonth;
+  const calculatedMealRate = totalMealsThisMonth > 0 ? totalGroceriesThisMonth / totalMealsThisMonth : 0;
+
+  const getMemberMonthCost = (id) =>
+    currentMonthDates.reduce((s, d) => s + getMemberDailyMeals(id, d), 0) * costPerMealUnit;
+
+  const allGroceries = useMemo(() => {
+    const list = [];
+    Object.entries(groceries).forEach(([date, items]) => items.forEach(item => list.push({ ...item, date })));
+    return list.sort((a, b) => b.date.localeCompare(a.date));
+  }, [groceries]);
+
+  const mealRateStatus = () => {
+    if (calculatedMealRate === 0) return null;
+    if (calculatedMealRate < MEAL_RATE_WARNING_MIN) return { type: "low", msg: `মিল রেট ৳${calculatedMealRate.toFixed(2)} — কম আছে (লক্ষ্য ৳${MEAL_RATE_WARNING_MIN}-৳${MEAL_RATE_WARNING_MAX})` };
+    if (calculatedMealRate > MEAL_RATE_WARNING_MAX) return { type: "high", msg: `⚠️ মিল রেট ৳${calculatedMealRate.toFixed(2)} — বেশি হয়ে গেছে!` };
+    return { type: "ok", msg: `✅ মিল রেট ৳${calculatedMealRate.toFixed(2)} — লক্ষ্যমাত্রার মধ্যে` };
+  };
+
+  const toggleMealOnDate = (id, meal) => {
+    const current = getMemberMealsOnDate(id, selectedDate);
+    setDailyRecords(prev => ({ ...prev, [selectedDate]: { ...(prev[selectedDate] || {}), [id]: { ...current, [meal]: !current[meal] } } }));
+  };
+  const toggleDefaultMeal = (id, meal) =>
+    setMembers(prev => prev.map(m => m.id === id ? { ...m, activeMeals: { ...m.activeMeals, [meal]: !m.activeMeals[meal] } } : m));
+
+  const addDeposit = (id) => {
+    const amt = parseFloat(depositInput[id]);
+    if (!amt || amt <= 0) return notify("সঠিক পরিমাণ দিন", "error");
+    setMembers(prev => prev.map(m => m.id === id ? { ...m, deposit: m.deposit + amt, depositHistory: [...(m.depositHistory || []), { date: getTodayKey(), amount: amt }] } : m));
+    setDepositInput(prev => ({ ...prev, [id]: "" }));
+    notify(`৳${amt} জমা হয়েছে`);
+  };
+
+  const addGrocery = () => {
+    if (!grocItem.trim()) return notify("আইটেমের নাম দিন", "error");
+    const amt = parseFloat(grocAmt);
+    if (!amt || amt <= 0) return notify("সঠিক মূল্য দিন", "error");
+    setGroceries(prev => ({ ...prev, [grocDate]: [...(prev[grocDate] || []), { id: genId(), item: grocItem.trim(), amount: amt }] }));
+    setGrocItem(""); setGrocAmt("");
+    notify(`${grocItem} (৳${amt}) যোগ হয়েছে`);
+  };
+  const removeGrocery = (date, id) =>
+    setGroceries(prev => ({ ...prev, [date]: (prev[date] || []).filter(g => g.id !== id) }));
+
+  const addMember = () => {
+    if (!newMemberName.trim()) return notify("নাম দিন", "error");
+    setMembers(p => [...p, {
+      id: Math.max(...p.map(x => x.id), 0) + 1,
+      name: newMemberName.trim(), room: newMemberRoom.trim() || `${Math.max(...p.map(x=>x.id),0)+1}`,
+      activeMeals: { morning: true, lunch: true, dinner: true }, deposit: 0, depositHistory: []
+    }]);
+    setNewMemberName(""); setNewMemberRoom("");
+    notify("নতুন সদস্য যোগ হয়েছে");
+  };
+
+  const saveRate = () => { setMealRate(rateInput); notify("মিল রেট আপডেট হয়েছে"); };
+
+  // ── Smart Calculator Logic ────────────────────────────────
+  const calcInput = (val) => {
+    if (calcWaiting) {
+      setCalcDisplay(String(val));
+      setCalcWaiting(false);
+      return;
+    }
+    setCalcDisplay(prev => {
+      if (prev === "0" && val !== ".") return String(val);
+      if (val === "." && prev.includes(".")) return prev;
+      return prev + val;
+    });
+  };
+
+  const calcOp = (op) => {
+    setCalcExpression(calcDisplay + " " + op);
+    setCalcWaiting(true);
+  };
+
+  const calcPercent = () => {
+    const v = parseFloat(calcDisplay);
+    if (!isNaN(v)) {
+      setCalcDisplay(String(v / 100));
+    }
+  };
+
+  const calcEval = () => {
+    try {
+      const parts = calcExpression.trim().split(" ");
+      const left = parseFloat(parts[0]);
+      const op = parts[1];
+      const right = parseFloat(calcDisplay);
+      let result;
+      if (op === "+") result = left + right;
+      else if (op === "−") result = left - right;
+      else if (op === "×") result = left * right;
+      else if (op === "÷") {
+        if (right === 0) { setCalcDisplay("Error"); setCalcExpression(""); return; }
+        result = left / right;
+      } else return;
+      const formatted = parseFloat(result.toFixed(6)).toString();
+      const entry = `${calcExpression} ${right} = ${formatted}`;
+      setCalcHistory(h => [entry, ...h].slice(0, 20));
+      setCalcDisplay(formatted);
+      setCalcExpression("");
+      setCalcWaiting(false);
+    } catch {
+      setCalcDisplay("Error");
+    }
+  };
+
+  const calcClear = () => { setCalcDisplay("0"); setCalcExpression(""); setCalcWaiting(false); };
+  const calcBackspace = () => {
+    setCalcDisplay(prev => prev.length > 1 ? prev.slice(0, -1) : "0");
+  };
+  const calcToggleSign = () => {
+    setCalcDisplay(prev => prev.startsWith("-") ? prev.slice(1) : "-" + prev);
+  };
+
+  // Scientific functions
+  const calcScientific = (fn) => {
+    const v = parseFloat(calcDisplay);
+    if (isNaN(v)) return;
+    let result;
+    try {
+      if (fn === "sqrt") result = Math.sqrt(v);
+      else if (fn === "sq") result = v * v;
+      else if (fn === "cube") result = v * v * v;
+      else if (fn === "inv") { if (v === 0) { setCalcDisplay("Error"); return; } result = 1 / v; }
+      else if (fn === "sin") result = Math.sin((v * Math.PI) / 180);
+      else if (fn === "cos") result = Math.cos((v * Math.PI) / 180);
+      else if (fn === "tan") result = Math.tan((v * Math.PI) / 180);
+      else if (fn === "log") { if (v <= 0) { setCalcDisplay("Error"); return; } result = Math.log10(v); }
+      else if (fn === "ln") { if (v <= 0) { setCalcDisplay("Error"); return; } result = Math.log(v); }
+      else if (fn === "pi") { setCalcDisplay(String(Math.PI.toFixed(8))); return; }
+      else if (fn === "e") { setCalcDisplay(String(Math.E.toFixed(8))); return; }
+      else if (fn === "fact") {
+        if (v < 0 || !Number.isInteger(v) || v > 20) { setCalcDisplay("Error"); return; }
+        result = Array.from({length: v}, (_, i) => i + 1).reduce((a, b) => a * b, 1);
+      }
+      const formatted = parseFloat(result.toFixed(8)).toString();
+      const entry = `${fn}(${v}) = ${formatted}`;
+      setCalcHistory(h => [entry, ...h].slice(0, 20));
+      setCalcDisplay(formatted);
+      setCalcWaiting(false);
+    } catch { setCalcDisplay("Error"); }
+  };
+
+  // EMI calculation
+  const calcEMI = () => {
+    const P = parseFloat(emiPrincipal);
+    const r = parseFloat(emiRate) / 100 / 12;
+    const n = parseInt(emiMonths);
+    if (!P || !r || !n || isNaN(P) || isNaN(r) || isNaN(n)) return null;
+    const emi = P * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+    const totalPay = emi * n;
+    const totalInterest = totalPay - P;
+    return { emi: emi.toFixed(2), totalPay: totalPay.toFixed(2), totalInterest: totalInterest.toFixed(2) };
+  };
+
+  // GST/VAT calculation
+  const calcGST = () => {
+    const amt = parseFloat(gstAmount);
+    const rate = parseFloat(gstRate) / 100;
+    if (!amt || isNaN(amt) || isNaN(rate)) return null;
+    if (gstMode === "add") {
+      const tax = amt * rate;
+      return { original: amt.toFixed(2), tax: tax.toFixed(2), total: (amt + tax).toFixed(2) };
+    } else {
+      const original = amt / (1 + rate);
+      const tax = amt - original;
+      return { original: original.toFixed(2), tax: tax.toFixed(2), total: amt.toFixed(2) };
+    }
+  };
+
+  // AI Connection Test
+  const testAiConnection = async (provider) => {
+    setAiTestStatus(p => ({...p, [provider]: "testing"}));
+    setAiTestMsg(p => ({...p, [provider]: ""}));
+    try {
+      let ok = false; let msg = "";
+      if (provider === "gemini") {
+        if (!geminiKey) { setAiTestStatus(p=>({...p,gemini:"fail"})); setAiTestMsg(p=>({...p,gemini:"API Key দিন"})); return; }
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({contents:[{role:"user",parts:[{text:"Say OK in one word"}]}]})
+        });
+        const data = await res.json();
+        ok = !!data.candidates?.[0]?.content;
+        msg = ok ? "✅ Gemini সংযুক্ত!" : `❌ ${data.error?.message || "ব্যর্থ"}`;
+      } else if (provider === "openai") {
+        if (!openaiKey) { setAiTestStatus(p=>({...p,openai:"fail"})); setAiTestMsg(p=>({...p,openai:"API Key দিন"})); return; }
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+          method:"POST", headers:{"Content-Type":"application/json","Authorization":`Bearer ${openaiKey}`},
+          body: JSON.stringify({model:"gpt-4o-mini", messages:[{role:"user",content:"Say OK"}], max_tokens:5})
+        });
+        const data = await res.json();
+        ok = !!data.choices?.[0]?.message;
+        msg = ok ? "✅ ChatGPT সংযুক্ত!" : `❌ ${data.error?.message || "ব্যর্থ"}`;
+      }
+      setAiTestStatus(p=>({...p,[provider]: ok?"ok":"fail"}));
+      setAiTestMsg(p=>({...p,[provider]: msg}));
+    } catch (err) {
+      setAiTestStatus(p=>({...p,[provider]:"fail"}));
+      setAiTestMsg(p=>({...p,[provider]:`❌ সংযোগ ব্যর্থ`}));
+    }
+  };
+
+  const addSpecialDistrib = () => {
+    if (!sdRoom.trim()) return notify("রুম নম্বর দিন", "error");
+    const cnt = parseInt(sdCount);
+    if (!cnt || cnt < 1) return notify("মিলের সংখ্যা দিন", "error");
+    if (!isSpecialDay(sdDate)) return notify("এই তারিখটি বিশেষ দিন নয়!", "error");
+    const entry = { id: genId(), room: sdRoom.trim(), count: cnt, collectedBy: sdCollector.trim() || sdRoom.trim(), time: new Date().toLocaleTimeString("bn-BD", { hour: "2-digit", minute: "2-digit" }) };
+    setSpecialDistrib(prev => ({ ...prev, [sdDate]: [...(prev[sdDate] || []), entry] }));
+    setSdRoom(""); setSdCount(""); setSdCollector("");
+    notify(`রুম ${entry.room} — ${cnt}টি মিল রেকর্ড হয়েছে`);
+  };
+  const removeSpecialEntry = (date, id) =>
+    setSpecialDistrib(prev => ({ ...prev, [date]: (prev[date] || []).filter(e => e.id !== id) }));
+
+  const addInventoryItem = () => {
+    if (!invName.trim()) return notify("আইটেমের নাম দিন", "error");
+    const qty = parseFloat(invQty) || 0;
+    const min = parseFloat(invMin) || 0;
+    setInventory(prev => [...prev, { id: genId(), name: invName.trim(), unit: invUnit.trim() || "পিস", quantity: qty, minAlert: min }]);
+    setInvName(""); setInvUnit(""); setInvQty(""); setInvMin("");
+    setShowAddInvForm(false);
+    notify(`${invName} ইনভেন্টরিতে যোগ হয়েছে`);
+  };
+  const adjustInventory = (id) => {
+    const amt = parseFloat(invAdjAmt);
+    if (!amt || amt <= 0) return notify("পরিমাণ দিন", "error");
+    setInventory(prev => prev.map(item => {
+      if (item.id !== id) return item;
+      const newQty = invAdjType === "add" ? item.quantity + amt : Math.max(0, item.quantity - amt);
+      return { ...item, quantity: newQty };
+    }));
+    const item = inventory.find(i => i.id === id);
+    notify(`${item?.name} ${invAdjType === "add" ? "+" : "-"}${amt} ${item?.unit}`);
+    setInvAdjId(null); setInvAdjAmt("");
+  };
+  const removeInventoryItem = (id) => {
+    if (!window.confirm("এই আইটেম মুছবেন?")) return;
+    setInventory(prev => prev.filter(i => i.id !== id));
+  };
+
+  // ── Receipt Upload + Telegram ─────────────────────────────
+  const handleReceiptUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const receipt = {
+        id: genId(), date: receiptDate,
+        note: receiptNote.trim() || "বাজারের রশিদ",
+        image: ev.target.result,
+        uploadedAt: new Date().toISOString()
+      };
+      setReceipts(prev => [...prev, receipt]);
+      notify("রশিদ সেভ হয়েছে");
+      setReceiptNote("");
+
+      // Send to Telegram if configured
+      if (telegramBotToken && telegramChatId) {
+        await sendReceiptToTelegram(file, receipt);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // ── Send receipt to Telegram Bot ──────────────────────────
+  // 📌 HOW TO USE TELEGRAM BOT:
+  //   1. Create a bot via @BotFather on Telegram → get Bot Token
+  //   2. Add the bot to a group OR message it directly
+  //   3. Get your Chat ID via @userinfobot or t.me/getidsbot
+  //   4. Enter both in Settings → Telegram tab
+  const sendReceiptToTelegram = async (file, receipt) => {
+    setTelegramSending(true);
+    try {
+      const caption = `🧾 *বাজারের রশিদ*\n📅 তারিখ: ${fmtDate(receipt.date)}\n📝 নোট: ${receipt.note}\n🕐 আপলোড: ${new Date(receipt.uploadedAt).toLocaleString("bn-BD")}`;
+      const formData = new FormData();
+      formData.append("chat_id", telegramChatId);
+      formData.append("caption", caption);
+      formData.append("parse_mode", "Markdown");
+      formData.append("photo", file);
+
+      const res = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendPhoto`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.ok) {
+        notify("📱 টেলিগ্রামে রশিদ পাঠানো হয়েছে!");
+      } else {
+        notify(`⚠️ টেলিগ্রাম: ${data.description || "পাঠানো যায়নি"}`, "error");
+      }
+    } catch {
+      notify("⚠️ টেলিগ্রাম সংযোগ ব্যর্থ", "error");
+    }
+    setTelegramSending(false);
+  };
+
+  // Manual send to Telegram (for existing receipts)
+  const resendReceiptToTelegram = async (receipt) => {
+    if (!telegramBotToken || !telegramChatId) return notify("আগে Telegram Bot Token ও Chat ID সেট করুন", "error");
+    setTelegramSending(true);
+    try {
+      const caption = `🧾 *বাজারের রশিদ (পুনরায় পাঠানো)*\n📅 তারিখ: ${fmtDate(receipt.date)}\n📝 নোট: ${receipt.note}`;
+      const res = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendPhoto`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: telegramChatId,
+          photo: receipt.image,
+          caption,
+          parse_mode: "Markdown",
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) notify("📱 টেলিগ্রামে পাঠানো হয়েছে!");
+      else notify(`⚠️ ${data.description || "ব্যর্থ"}`, "error");
+    } catch {
+      notify("⚠️ সংযোগ ব্যর্থ", "error");
+    }
+    setTelegramSending(false);
+  };
+
+  // ── AI Context ────────────────────────────────────────────
+  const buildContext = useCallback(() => {
+    const memberSummary = members.map(m => {
+      const meals = currentMonthDates.reduce((s, d) => s + getMemberDailyMeals(m.id, d), 0);
+      const cost = meals * costPerMealUnit;
+      const balance = m.deposit - cost;
+      return `${m.name} (রুম ${m.room || "-"}): মিল=${meals.toFixed(1)}, খরচ=৳${Math.round(cost)}, জমা=৳${m.deposit}, ব্যালেন্স=${balance >= 0 ? "+" : ""}৳${Math.round(balance)}`;
+    }).join("\n");
+    const recentGroc = allGroceries.slice(0, 15).map(g => `${fmtDate(g.date)}: ${g.item} ৳${g.amount}`).join("\n");
+    const inventorySummary = inventory.map(i => `${i.name}: ${i.quantity} ${i.unit} (সতর্কতা: ${i.minAlert} ${i.unit})`).join("\n");
+    const rateStatus = mealRateStatus();
+    return `তুমি "${OWNER}"-এর মিল ম্যানেজমেন্ট সিস্টেমের AI সহকারী।
+তুমি বাংলা, English, হিন্দি সহ যেকোনো ভাষায় উত্তর দাও।
+
+তোমার বিশেষ ক্ষমতা: ইনভেন্টরি আপডেট করতে JSON action দাও।
+Action format: [ACTION:{"type":"inventory_add","name":"তেল","amount":5,"unit":"লিটার"}]
+বা: [ACTION:{"type":"inventory_remove","name":"তেল","amount":2,"unit":"লিটার"}]
+বা: [ACTION:{"type":"add_grocery","item":"চাল","amount":500,"date":"today"}]
+
+=== লাইভ ডেটা ===
+সদস্য: ${members.length} জন | মিল রেট: ৳${mealRate}/ইউনিট
+মোট মিল: ${totalMealsThisMonth.toFixed(1)} ইউনিট
+বাজার খরচ: ৳${Math.round(totalGroceriesThisMonth)}
+মোট খরচ: ৳${Math.round(totalCostThisMonth)}
+প্রতি মিল রেট (হিসাবকৃত): ৳${calculatedMealRate.toFixed(2)}
+${rateStatus ? `মিল রেট অবস্থা: ${rateStatus.msg}` : ""}
+মোট জমা: ৳${Math.round(totalDeposit)}
+হাতে আছে: ৳${Math.round(cashInHand)}
+বিশেষ দিন: ${DAYS_BN[specialWeekday]}বার
+
+=== সদস্য হিসাব ===
+${memberSummary}
+
+=== ইনভেন্টরি ===
+${inventorySummary}
+
+=== সাম্প্রতিক বাজার ===
+${recentGroc || "কোনো বাজার নেই"}
+
+নিয়ম: সকাল=0.5, দুপুর=1.0, রাত=1.0 ইউনিট (বিশেষ দিনে দুপুর=2.5)।
+মিল রেট লক্ষ্যমাত্রা: ৳${MEAL_RATE_WARNING_MIN}-৳${MEAL_RATE_WARNING_MAX}।`;
+  }, [members, dailyRecords, groceries, mealRate, inventory, specialWeekday]);
+
+  const processAction = (actionStr) => {
+    try {
+      const match = actionStr.match(/\[ACTION:(.*?)\]/);
+      if (!match) return;
+      const action = JSON.parse(match[1]);
+      if (action.type === "inventory_add") {
+        setInventory(prev => prev.map(item => {
+          if (item.name.includes(action.name) || action.name.includes(item.name.split(" ")[0])) {
+            return { ...item, quantity: item.quantity + action.amount };
+          }
+          return item;
+        }));
+        notify(`✅ AI: ${action.name} +${action.amount} ${action.unit}`);
+      } else if (action.type === "inventory_remove") {
+        setInventory(prev => prev.map(item => {
+          if (item.name.includes(action.name) || action.name.includes(item.name.split(" ")[0])) {
+            return { ...item, quantity: Math.max(0, item.quantity - action.amount) };
+          }
+          return item;
+        }));
+        notify(`✅ AI: ${action.name} -${action.amount} ${action.unit}`);
+      } else if (action.type === "add_grocery") {
+        const date = action.date === "today" ? getTodayKey() : action.date;
+        setGroceries(prev => ({ ...prev, [date]: [...(prev[date] || []), { id: genId(), item: action.item, amount: action.amount }] }));
+        notify(`✅ AI: বাজারে ${action.item} ৳${action.amount}`);
+      }
+    } catch {}
+  };
+
+  const sendChat = async () => {
+    if (!chatInput.trim() || chatLoading) return;
+    const userMsg = chatInput.trim();
+    setChatInput("");
+    const newMsgs = [...chatMessages, { role: "user", text: userMsg }];
+    setChatMessages(newMsgs);
+    setChatLoading(true);
+    try {
+      let reply = "";
+      if (aiProvider === "gemini" && geminiKey) {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: buildContext() + "\n\nUser: " + userMsg }] }] })
+        });
+        const data = await res.json();
+        reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "উত্তর পাওয়া যায়নি।";
+      } else if (aiProvider === "openai" && openaiKey) {
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openaiKey}` },
+          body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "system", content: buildContext() }, ...newMsgs.slice(1).map(m => ({ role: m.role === "user" ? "user" : "assistant", content: m.text }))] })
+        });
+        const data = await res.json();
+        reply = data.choices?.[0]?.message?.content || "উত্তর পাওয়া যায়নি।";
+      } else {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: buildContext(), messages: newMsgs.slice(1).map(m => ({ role: m.role === "user" ? "user" : "assistant", content: m.text })) })
+        });
+        const data = await res.json();
+        reply = data.content?.map(c => c.text || "").join("") || "উত্তর পাওয়া যায়নি।";
+      }
+      if (reply.includes("[ACTION:")) {
+        processAction(reply);
+        reply = reply.replace(/\[ACTION:.*?\]/g, "").trim();
+      }
+      setChatMessages(prev => [...prev, { role: "assistant", text: reply }]);
+    } catch {
+      setChatMessages(prev => [...prev, { role: "assistant", text: "⚠️ সংযোগ সমস্যা। API key বা নেট চেক করুন।" }]);
+    }
+    setChatLoading(false);
+  };
+
+  // ── Styles ─────────────────────────────────────────────────
+  const inp = (extra={}) => ({
+    background: C.surface, border: `1px solid ${C.border}`, color: C.text,
+    borderRadius: 10, padding: "10px 14px", fontSize: 14, fontFamily: "inherit",
+    boxSizing: "border-box", width: "100%", transition: "border-color .2s", ...extra
+  });
+  const card = (extra={}) => ({
+    background: C.card, borderRadius: 14, padding: 18,
+    border: `1px solid ${C.border}`, marginBottom: 14, ...extra
+  });
+  const btn = (bg = C.primary, extra={}) => ({
+    background: bg, border: "none", borderRadius: 10, padding: "10px 18px",
+    color: "#050d0f", fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+    fontSize: 13, transition: "opacity .15s, transform .1s", ...extra
+  });
+  const statBox = (color) => ({
+    background: C.surface, borderRadius: 12, padding: 14, border: `1px solid ${color}33`
+  });
+
+  const TABS = [
+    { id:"dashboard",  label:"ড্যাশবোর্ড", icon:"📊" },
+    { id:"daily",      label:"দৈনিক",     icon:"🍽️" },
+    { id:"special",    label:"বিশেষ",     icon:"⭐" },
+    { id:"grocery",    label:"বাজার",     icon:"🛒" },
+    { id:"inventory",  label:"মজুদ",      icon:"📦" },
+    { id:"receipts",   label:"রশিদ",      icon:"🧾" },
+    { id:"members",    label:"সদস্য",     icon:"👥" },
+    { id:"accounts",   label:"হিসাব",     icon:"💰" },
+    { id:"calculator", label:"ক্যালকু",   icon:"🧮" },
+    { id:"settings",   label:"সেটিং",     icon:"⚙️" },
+  ];
+
+  const specialDatesThisMonth = currentMonthDates.filter(d => isSpecialDay(d));
+  const rateStatus = mealRateStatus();
+  const lowInventory = inventory.filter(i => i.quantity <= i.minAlert && i.minAlert > 0);
+
+  return (
+    <div style={{ fontFamily:"'Hind Siliguri','Noto Sans Bengali',sans-serif", minHeight:"100vh", background: C.bg, color: C.text }}>
+      <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+      {/* ── PWA Install Banner ── */}
+      {showInstallBanner && (
+        <div style={{
+          position:"fixed", top: 0, left:0, right:0, zIndex:9999,
+          background:`linear-gradient(135deg, ${C.primary}, ${C.secondary})`,
+          padding:"12px 16px", display:"flex", alignItems:"center", gap:10,
+          boxShadow:"0 4px 20px #000a"
+        }}>
+          <div style={{fontSize:20}}>📱</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:700,color:"#050d0f"}}>অ্যাপ ইনস্টল করুন!</div>
+            <div style={{fontSize:11,color:"#0a2020"}}>ইন্টারনেট ছাড়াও কাজ করবে ✓</div>
+          </div>
+          <button onClick={()=>{ installPromptRef.current?.prompt(); setShowInstallBanner(false); }} style={{background:"#050d0f",border:"none",borderRadius:8,padding:"6px 14px",color:C.primary,cursor:"pointer",fontSize:12,fontFamily:"inherit",fontWeight:700}}>ইনস্টল</button>
+          <button onClick={()=>setShowInstallBanner(false)} style={{background:"none",border:"none",color:"#050d0f",cursor:"pointer",fontSize:18,padding:"0 4px"}}>✕</button>
+        </div>
+      )}
+
+      {/* ── Notification Toast ── */}
+      {notification && (
+        <div style={{
+          position:"fixed", top:16, left:"50%", transform:"translateX(-50%)",
+          zIndex:9999, background: notification.type==="error" ? "#ef4444" : C.primary,
+          color: notification.type==="error" ? "#fff" : "#050d0f",
+          padding:"11px 26px", borderRadius:14, fontWeight:700,
+          boxShadow:"0 4px 32px #000b", animation:"slideIn .3s", maxWidth:"92vw", textAlign:"center", fontSize:14
+        }}>
+          {notification.msg}
+        </div>
+      )}
+
+      {/* ── Receipt Modal ── */}
+      {viewReceipt && (
+        <div onClick={()=>setViewReceipt(null)} style={{ position:"fixed", inset:0, background:"#000d", zIndex:9998, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+          <div onClick={e=>e.stopPropagation()} style={{ background: C.card, borderRadius:18, padding:18, maxWidth:420, width:"100%", border:`1px solid ${C.borderHi}` }}>
+            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:14 }}>
+              <div>
+                <div style={{ fontWeight:700, color: C.primary, fontSize:15 }}>{viewReceipt.note}</div>
+                <div style={{ fontSize:12, color: C.muted }}>{fmtDate(viewReceipt.date)}</div>
+              </div>
+              <button onClick={()=>setViewReceipt(null)} style={{ background:"none", border:"none", color:C.danger, fontSize:22, cursor:"pointer" }}>✕</button>
+            </div>
+            <img src={viewReceipt.image} alt="receipt" style={{ width:"100%", borderRadius:12, maxHeight:400, objectFit:"contain", background: C.surface }} />
+            <div style={{ display:"flex", gap:8, marginTop:14 }}>
+              <button onClick={()=>{ setReceipts(p=>p.filter(r=>r.id!==viewReceipt.id)); setViewReceipt(null); }} style={{ ...btn(C.danger, { color:"#fff" }), flex:1, fontSize:12 }}>🗑️ মুছুন</button>
+              {telegramBotToken && telegramChatId && (
+                <button onClick={()=>resendReceiptToTelegram(viewReceipt)} disabled={telegramSending} style={{ ...btn(C.secondary, { color:"#fff" }), flex:1, fontSize:12 }}>
+                  {telegramSending ? "পাঠানো হচ্ছে..." : "📱 Telegram-এ পাঠান"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── HEADER ── */}
+      <div style={{
+        background: `linear-gradient(135deg, ${C.surface}, ${C.card})`,
+        borderBottom: `1px solid ${C.border}`, padding: "14px 16px",
+        position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(8px)"
+      }}>
+        <div style={{ maxWidth:820, margin:"0 auto" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
+            <div>
+              <div style={{ fontSize:19, fontWeight:700, color: C.primary, letterSpacing:"-0.3px" }}>
+                🏠 মিল ম্যানেজার <span style={{ color: C.secondary }}>Pro</span>
+              </div>
+              <div style={{ fontSize:10, color: C.muted, marginTop:2 }}>
+                {today.getDate()} {MONTHS_BN[today.getMonth()]} {today.getFullYear()} · {members.length} সদস্য
+              </div>
+              <div style={{ fontSize:9, color: C.textDim, marginTop:1 }}>by {OWNER}</div>
+            </div>
+            <div style={{ textAlign:"right" }}>
+              <div style={{ fontSize:9, color: C.muted }}>হিসাবকৃত মিল রেট</div>
+              <div style={{ fontSize:18, fontWeight:700, color: rateStatus?.type==="high" ? C.danger : rateStatus?.type==="ok" ? C.success : C.accent }}>
+                ৳{calculatedMealRate.toFixed(1)}/মিল
+              </div>
+              {rateStatus?.type === "high" && <div style={{ fontSize:9, color: C.danger, fontWeight:700 }}>⚠️ বেশি!</div>}
+            </div>
+          </div>
+
+          {rateStatus?.type === "high" && (
+            <div style={{ background:"#ef444422", border:`1px solid ${C.danger}55`, borderRadius:8, padding:"6px 12px", fontSize:12, color: C.danger, marginBottom:8 }}>
+              {rateStatus.msg}
+            </div>
+          )}
+          {lowInventory.length > 0 && (
+            <div style={{ background:"#f59e0b22", border:`1px solid ${C.warn}55`, borderRadius:8, padding:"6px 12px", fontSize:12, color: C.warn, marginBottom:8 }}>
+              ⚠️ কম মজুদ: {lowInventory.map(i => `${i.name} (${i.quantity} ${i.unit})`).join(", ")}
+            </div>
+          )}
+
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:6 }}>
+            {[
+              ["মোট খরচ", `৳${Math.round(totalCostThisMonth)}`, C.secondary],
+              ["বাজার",   `৳${Math.round(totalGroceriesThisMonth)}`, C.danger],
+              ["মিল রেট", `৳${calculatedMealRate.toFixed(1)}`, rateStatus?.type==="high" ? C.danger : C.accent],
+              ["হাতে",    `৳${Math.round(cashInHand)}`, cashInHand>=0 ? C.primary : C.danger],
+            ].map(([l,v,c])=>(
+              <div key={l} style={{ background:`${C.bg}88`, borderRadius:9, padding:"7px 9px", border:`1px solid ${c}22` }}>
+                <div style={{ fontSize:9, color: C.muted }}>{l}</div>
+                <div style={{ fontSize:13, fontWeight:700, color:c }}>{v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── TABS ── */}
+      <div style={{ display:"flex", background: C.card, borderBottom:`1px solid ${C.border}`, overflowX:"auto" }}>
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            flex:"0 0 auto", padding:"10px 7px", border:"none", background:"transparent", cursor:"pointer",
+            color: tab===t.id ? C.primary : C.muted,
+            borderBottom: tab===t.id ? `2px solid ${C.primary}` : "2px solid transparent",
+            fontSize:10, fontFamily:"inherit", fontWeight: tab===t.id ? 700 : 400, minWidth:54,
+            display:"flex", flexDirection:"column", alignItems:"center", gap:3, transition:"color .15s",
+          }}>
+            <div style={{ fontSize:15 }}>{t.icon}</div>{t.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ padding:14, maxWidth:820, margin:"0 auto", paddingBottom:110 }}>
+
+        {/* ══════════════ DASHBOARD ══════════════ */}
+        {tab==="dashboard" && (
+          <div>
+            {/* Hero cash card */}
+            <div style={{
+              background: `linear-gradient(135deg, ${C.card}, ${C.surface})`,
+              borderRadius:18, padding:22, marginBottom:14,
+              border: `2px solid ${cashInHand>=0 ? C.primary : C.danger}`,
+              boxShadow: `0 0 36px ${cashInHand>=0 ? C.glow : "#ef444422"}`,
+              display:"flex", justifyContent:"space-between", alignItems:"center"
+            }}>
+              <div>
+                <div style={{ fontSize:11, color: C.muted, marginBottom:4, letterSpacing:1 }}>💵 হাতে নগদ টাকা</div>
+                <div style={{ fontSize:38, fontWeight:700, color: cashInHand >= 0 ? C.primary : C.danger,
+                  textShadow: `0 0 24px ${cashInHand>=0 ? C.glow : "#ef444455"}` }}>
+                  ৳{Math.round(cashInHand)}
+                </div>
+                <div style={{ fontSize:11, color: C.muted, marginTop:6 }}>
+                  জমা: <span style={{color:C.primary}}>৳{Math.round(totalDeposit)}</span> · খরচ: <span style={{color:C.danger}}>৳{Math.round(totalCostThisMonth)}</span>
+                </div>
+              </div>
+              <div style={{ fontSize:48 }}>{cashInHand >= 0 ? "💰" : "⛔"}</div>
+            </div>
+
+            {rateStatus && (
+              <div style={{
+                background: rateStatus.type==="high" ? "#ef444418" : rateStatus.type==="ok" ? "#10b98118" : "#f59e0b18",
+                border:`1px solid ${rateStatus.type==="high" ? C.danger : rateStatus.type==="ok" ? C.success : C.warn}`,
+                borderRadius:12, padding:14, marginBottom:14,
+              }}>
+                <div style={{ fontSize:13, fontWeight:700, color: rateStatus.type==="high" ? C.danger : rateStatus.type==="ok" ? C.success : C.warn }}>{rateStatus.msg}</div>
+                <div style={{ fontSize:12, color: C.muted, marginTop:4 }}>
+                  মোট বাজার (৳{Math.round(totalGroceriesThisMonth)}) ÷ মোট মিল ({totalMealsThisMonth.toFixed(1)}) = ৳{calculatedMealRate.toFixed(2)} / মিল
+                </div>
+              </div>
+            )}
+
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
+              {[
+                ["🍽️ মোট মিল",    `${totalMealsThisMonth.toFixed(1)} ইউ`, C.secondary],
+                ["🛒 বাজার খরচ",  `৳${Math.round(totalGroceriesThisMonth)}`,   C.danger],
+                ["💸 সর্বমোট খরচ",`৳${Math.round(totalCostThisMonth)}`,         C.accent],
+                ["💰 মোট জমা",    `৳${Math.round(totalDeposit)}`,               C.primary],
+              ].map(([l,v,c])=>(
+                <div key={l} style={{ background: C.card, borderRadius:12, padding:14, border:`1px solid ${c}33`, boxShadow:`0 2px 12px ${c}11` }}>
+                  <div style={{ fontSize:11, color: C.muted, marginBottom:6 }}>{l}</div>
+                  <div style={{ fontSize:22, fontWeight:700, color:c }}>{v}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Monthly summary */}
+            <div style={card()}>
+              <div style={{ fontSize:13, fontWeight:700, color: C.primary, marginBottom:12 }}>📋 মাসিক সারসংক্ষেপ</div>
+              {[
+                ["মোট সদস্য",        `${members.length} জন`,                           C.text],
+                ["সেট মিল রেট",      `৳${mealRate} / ইউনিট`,                          C.muted],
+                ["হিসাবকৃত মিল রেট", `৳${calculatedMealRate.toFixed(2)} / মিল`,       rateStatus?.type==="high" ? C.danger : rateStatus?.type==="ok" ? C.success : C.accent],
+                ["মোট মিল ইউনিট",   totalMealsThisMonth.toFixed(1),                   C.secondary],
+                ["বাজার খরচ",        `৳${Math.round(totalGroceriesThisMonth)}`,         C.danger],
+                ["সর্বমোট খরচ",      `৳${Math.round(totalCostThisMonth)}`,             C.accent],
+                ["মোট জমা",          `৳${Math.round(totalDeposit)}`,                   C.primary],
+                ["হাতে আছে",         `৳${Math.round(cashInHand)}`,                    cashInHand>=0 ? C.primary : C.danger],
+              ].map(([l,v,c])=>(
+                <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:`1px solid ${C.border}`, fontSize:13 }}>
+                  <span style={{ color: C.muted }}>{l}</span>
+                  <span style={{ fontWeight:700, color:c }}>{v}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Due members */}
+            <div style={card({ border:`1px solid ${C.danger}33` })}>
+              <div style={{ fontSize:13, fontWeight:700, color: C.danger, marginBottom:10 }}>⚠️ বকেয়া সদস্য</div>
+              {members.map(m => ({ ...m, bal: m.deposit - getMemberMonthCost(m.id) }))
+                .filter(m => m.bal < 0).sort((a,b) => a.bal-b.bal)
+                .map(m => (
+                  <div key={m.id} style={{ display:"flex", justifyContent:"space-between", padding:"7px 0", borderBottom:`1px solid ${C.border}`, fontSize:13 }}>
+                    <span style={{color: C.text}}>{m.name} <span style={{ color: C.muted, fontSize:11 }}>(রুম {m.room})</span></span>
+                    <span style={{ color: C.danger, fontWeight:700 }}>বকেয়া ৳{Math.abs(Math.round(m.bal))}</span>
+                  </div>
+                ))}
+              {!members.some(m => m.deposit - getMemberMonthCost(m.id) < 0) &&
+                <div style={{ color: C.success, fontSize:13, textAlign:"center", padding:8 }}>✓ সবার হিসাব ঠিক আছে</div>}
+            </div>
+
+            {lowInventory.length > 0 && (
+              <div style={card({ border:`1px solid ${C.warn}44` })}>
+                <div style={{ fontSize:13, fontWeight:700, color: C.warn, marginBottom:10 }}>📦 কম মজুদ সতর্কতা</div>
+                {lowInventory.map(i => (
+                  <div key={i.id} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:`1px solid ${C.border}`, fontSize:13 }}>
+                    <span style={{ color: C.text }}>{i.name}</span>
+                    <span style={{ color: C.danger, fontWeight:700 }}>{i.quantity} {i.unit} বাকি</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div style={card()}>
+              <div style={{ fontSize:13, fontWeight:700, color: C.primary, marginBottom:10 }}>🛒 সাম্প্রতিক বাজার</div>
+              {allGroceries.slice(0,7).map((g,i)=>(
+                <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:`1px solid ${C.border}`, fontSize:13 }}>
+                  <span><span style={{ color: C.muted, fontSize:11 }}>{fmtDate(g.date)} · </span><span style={{color: C.text}}>{g.item}</span></span>
+                  <span style={{ color: C.danger, fontWeight:600 }}>৳{g.amount}</span>
+                </div>
+              ))}
+              {allGroceries.length===0 && <div style={{ color: C.muted, fontSize:13, textAlign:"center" }}>এখনো কোনো বাজার নেই</div>}
+            </div>
+
+            <div style={{ background: C.surface, borderRadius:12, padding:14, border:`1px solid ${C.border}`, marginBottom:14 }}>
+              <div style={{ fontSize:12, fontWeight:700, color: C.muted, marginBottom:8 }}>📌 মিল রেট হিসাব</div>
+              <div style={{ fontSize:12, color: C.muted, lineHeight:1.7 }}>
+                মোট বাজার (৳{Math.round(totalGroceriesThisMonth)}) ÷ মোট মিল ({totalMealsThisMonth.toFixed(1)}) = <strong style={{color: C.primary}}>৳{calculatedMealRate.toFixed(2)}</strong> প্রতি মিল<br/>
+                লক্ষ্য: ৳{MEAL_RATE_WARNING_MIN}–৳{MEAL_RATE_WARNING_MAX}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════ DAILY ══════════════ */}
+        {tab==="daily" && (
+          <div>
+            <div style={{ display:"flex", gap:8, marginBottom:14, alignItems:"center" }}>
+              <input type="date" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)} style={{ ...inp(), flex:1 }} />
+              {isSpecialDay(selectedDate) && <span style={{ background:`${C.accent}22`, color: C.accent, padding:"6px 12px", borderRadius:20, fontSize:12, fontWeight:700, whiteSpace:"nowrap" }}>⭐ বিশেষ</span>}
+            </div>
+            <div style={{ display:"flex", gap:8, marginBottom:14 }}>
+              {[["সকাল",getMealValueForDay(selectedDate).morning,C.accent],["দুপুর",getMealValueForDay(selectedDate).lunch,C.success],["রাত",getMealValueForDay(selectedDate).dinner,C.secondary]].map(([l,v,c])=>(
+                <div key={l} style={{ flex:1, ...statBox(c), textAlign:"center", padding:10 }}>
+                  <div style={{ fontSize:10, color: C.muted }}>{l}</div>
+                  <div style={{ fontSize:20, fontWeight:700, color:c }}>{v}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ background: C.card, borderRadius:12, border:`1px solid ${C.border}`, overflow:"hidden" }}>
+              <div style={{ display:"grid", gridTemplateColumns:"38px 1fr 52px 52px 52px 42px", padding:"10px 10px", borderBottom:`1px solid ${C.border}`, fontSize:11, color: C.muted, fontWeight:700 }}>
+                <span>রুম</span><span>নাম</span><span style={{textAlign:"center"}}>সকাল</span><span style={{textAlign:"center"}}>দুপুর</span><span style={{textAlign:"center"}}>রাত</span><span style={{textAlign:"center"}}>মিল</span>
+              </div>
+              {members.map(m => {
+                const meals = getMemberMealsOnDate(m.id, selectedDate);
+                const guests = getGuestMealsOnDate(m.id, selectedDate);
+                const total = getMemberDailyMeals(m.id, selectedDate);
+                const hasGuests = (guests.morning||0)+(guests.lunch||0)+(guests.dinner||0) > 0;
+                return (
+                  <div key={m.id} style={{ borderBottom:`1px solid ${C.border}` }}>
+                    <div style={{ display:"grid", gridTemplateColumns:"38px 1fr 52px 52px 52px 42px", padding:"8px 10px", alignItems:"center" }}>
+                      <span style={{ fontSize:11, color: C.accent, fontWeight:700 }}>{m.room}</span>
+                      <span style={{ fontSize:12, fontWeight:600 }}>{m.name}{hasGuests && <span style={{color:C.warn,fontSize:10,marginLeft:4}}>👤+</span>}</span>
+                      {[["morning",C.accent],["lunch",C.success],["dinner",C.secondary]].map(([key,color])=>(
+                        <button key={key} onClick={()=>toggleMealOnDate(m.id,key)} style={{ textAlign:"center", padding:"5px 2px", borderRadius:8, border:`1px solid ${meals[key]?color:C.border}`, background:meals[key]?`${color}22`:"transparent", color:meals[key]?color:C.muted, cursor:"pointer", fontSize:18, margin:"0 1px" }}>
+                          {meals[key]?"✓":"✗"}
+                        </button>
+                      ))}
+                      <span style={{ textAlign:"center", fontSize:13, fontWeight:700, color:total>0?C.primary:C.muted }}>{total.toFixed(1)}</span>
+                    </div>
+                    <div style={{ display:"grid", gridTemplateColumns:"38px 1fr 52px 52px 52px 42px", padding:"2px 10px 8px", alignItems:"center" }}>
+                      <span></span>
+                      <span style={{ fontSize:10, color: C.warn }}>👤 গেস্ট</span>
+                      {["morning","lunch","dinner"].map(key => (
+                        <div key={key} style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:2 }}>
+                          <button onClick={()=>setGuestMealCount(m.id, selectedDate, key, -1)} disabled={!meals[key]||!guests[key]}
+                            style={{ width:18, height:18, borderRadius:4, border:`1px solid ${C.border}`, background: C.surface, color:meals[key]?C.danger:C.border, cursor:meals[key]&&guests[key]?"pointer":"not-allowed", fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", padding:0 }}>−</button>
+                          <span style={{ fontSize:11, fontWeight:700, color:guests[key]?C.warn:C.muted, minWidth:10, textAlign:"center" }}>{guests[key]||0}</span>
+                          <button onClick={()=>setGuestMealCount(m.id, selectedDate, key, 1)} disabled={!meals[key]}
+                            style={{ width:18, height:18, borderRadius:4, border:`1px solid ${C.border}`, background: C.surface, color:meals[key]?C.success:C.border, cursor:meals[key]?"pointer":"not-allowed", fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", padding:0 }}>+</button>
+                        </div>
+                      ))}
+                      <span style={{ fontSize:10, color: C.muted, textAlign:"center" }}>
+                        {(guests.morning||0)+(guests.lunch||0)+(guests.dinner||0)>0?`+${(guests.morning||0)+(guests.lunch||0)+(guests.dinner||0)}`:""}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════ SPECIAL ══════════════ */}
+        {tab==="special" && (
+          <div>
+            <div style={card()}>
+              <div style={{ fontSize:13, fontWeight:700, color: C.accent, marginBottom:12 }}>⭐ বিশেষ মিল রেকর্ড করুন</div>
+              <div style={{ display:"flex", gap:8, marginBottom:8 }}>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:11, color: C.muted, marginBottom:4 }}>তারিখ</div>
+                  <input type="date" value={sdDate} onChange={e=>setSdDate(e.target.value)} style={inp()} />
+                </div>
+              </div>
+              <div style={{ display:"flex", gap:8, marginBottom:8 }}>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:11, color: C.muted, marginBottom:4 }}>রুম নং</div>
+                  <input value={sdRoom} onChange={e=>setSdRoom(e.target.value)} placeholder="রুম" style={inp()} />
+                </div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:11, color: C.muted, marginBottom:4 }}>মিল সংখ্যা</div>
+                  <input type="number" value={sdCount} onChange={e=>setSdCount(e.target.value)} placeholder="কতটি" style={inp()} />
+                </div>
+              </div>
+              <div style={{ marginBottom:12 }}>
+                <div style={{ fontSize:11, color: C.muted, marginBottom:4 }}>সংগ্রহকারী (ঐচ্ছিক)</div>
+                <input value={sdCollector} onChange={e=>setSdCollector(e.target.value)} placeholder="নাম বা রুম নম্বর" style={inp()} />
+              </div>
+              <button onClick={addSpecialDistrib} style={{ ...btn(C.accent), width:"100%" }}>✓ রেকর্ড করুন</button>
+            </div>
+            {specialDatesThisMonth.map(date => {
+              const entries = specialDistrib[date] || [];
+              const totalMeals = entries.reduce((s,e)=>s+e.count, 0);
+              const activeOnDate = members.filter(m => getMemberMealsOnDate(m.id, date).lunch).length;
+              return (
+                <div key={date} style={card({ border:`1px solid ${C.accent}33` })}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+                    <div>
+                      <div style={{ fontSize:13, fontWeight:700, color: C.accent }}>⭐ {fmtDate(date)} ({DAYS_BN[new Date(date+"T00:00:00").getDay()]}বার)</div>
+                      <div style={{ fontSize:11, color: C.muted, marginTop:2 }}>মিলে ছিল: {activeOnDate} জন</div>
+                    </div>
+                    <div style={{ textAlign:"right" }}>
+                      <div style={{ fontSize:11, color: C.muted }}>বিতরণ</div>
+                      <div style={{ fontSize:20, fontWeight:700, color:totalMeals===activeOnDate?C.success:totalMeals<activeOnDate?C.accent:C.danger }}>{totalMeals}/{activeOnDate}</div>
+                    </div>
+                  </div>
+                  {entries.map(e => (
+                    <div key={e.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"7px 8px", borderBottom:`1px solid ${C.border}` }}>
+                      <span style={{ fontWeight:700, color: C.accent, fontSize:13 }}>🏠{e.room}</span>
+                      <span style={{ fontSize:12 }}>{e.collectedBy}</span>
+                      <span style={{ fontWeight:700, color: C.success }}>{e.count}টি</span>
+                      <span style={{ fontSize:11, color: C.muted }}>{e.time}</span>
+                      <button onClick={()=>removeSpecialEntry(date, e.id)} style={{ background:`${C.danger}22`, border:"none", borderRadius:5, padding:"2px 8px", color: C.danger, cursor:"pointer", fontSize:12 }}>✕</button>
+                    </div>
+                  ))}
+                  {entries.length===0 && <div style={{ color: C.muted, fontSize:12, textAlign:"center", padding:8 }}>কোনো রেকর্ড নেই</div>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ══════════════ GROCERY ══════════════ */}
+        {tab==="grocery" && (
+          <div>
+            <div style={card()}>
+              <div style={{ fontSize:13, fontWeight:700, color: C.primary, marginBottom:12 }}>➕ বাজার যোগ করুন</div>
+              <div style={{ marginBottom:8 }}>
+                <div style={{ fontSize:11, color: C.muted, marginBottom:4 }}>তারিখ</div>
+                <input type="date" value={grocDate} onChange={e=>setGrocDate(e.target.value)} style={inp()} />
+              </div>
+              <div style={{ display:"flex", gap:8, marginBottom:10 }}>
+                <div style={{ flex:2 }}>
+                  <div style={{ fontSize:11, color: C.muted, marginBottom:4 }}>আইটেমের নাম</div>
+                  <input value={grocItem} onChange={e=>setGrocItem(e.target.value)} placeholder="পেঁয়াজ, তেল, মরিচ..." style={inp()} onKeyDown={e=>e.key==="Enter"&&addGrocery()} />
+                </div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:11, color: C.muted, marginBottom:4 }}>মূল্য (৳)</div>
+                  <input type="number" value={grocAmt} onChange={e=>setGrocAmt(e.target.value)} placeholder="০" style={inp()} onKeyDown={e=>e.key==="Enter"&&addGrocery()} />
+                </div>
+              </div>
+              <button onClick={addGrocery} style={{ ...btn(C.success), width:"100%" }}>✓ বাজার যোগ করুন</button>
+            </div>
+
+            <div style={{ background: C.card, borderRadius:12, padding:16, border:`1px solid ${C.danger}33`, marginBottom:14, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <div>
+                <div style={{ fontSize:11, color: C.muted }}>এই মাসে মোট বাজার</div>
+                <div style={{ fontSize:26, fontWeight:700, color: C.danger }}>৳{Math.round(totalGroceriesThisMonth)}</div>
+              </div>
+              <div style={{ textAlign:"right" }}>
+                <div style={{ fontSize:11, color: C.muted }}>মিল রেট</div>
+                <div style={{ fontSize:22, fontWeight:700, color: rateStatus?.type==="high"?C.danger:rateStatus?.type==="ok"?C.success:C.accent }}>৳{calculatedMealRate.toFixed(2)}</div>
+              </div>
+            </div>
+
+            {Object.entries(groceries).sort((a,b)=>b[0].localeCompare(a[0])).map(([date, items])=>(
+              <div key={date} style={card()}>
+                <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color: C.muted }}>{fmtDate(date)} {isSpecialDay(date)?"⭐":""}</div>
+                  <div style={{ fontSize:13, fontWeight:700, color: C.danger }}>৳{items.reduce((s,i)=>s+i.amount,0)}</div>
+                </div>
+                {items.map(g=>(
+                  <div key={g.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0", borderBottom:`1px solid ${C.border}` }}>
+                    <span style={{ fontSize:13 }}>{g.item}</span>
+                    <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+                      <span style={{ color: C.danger, fontWeight:600 }}>৳{g.amount}</span>
+                      <button onClick={()=>removeGrocery(date, g.id)} style={{ background:`${C.danger}22`, border:"none", borderRadius:5, padding:"2px 8px", color: C.danger, cursor:"pointer", fontSize:12 }}>✕</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+            {allGroceries.length===0 && <div style={{ color: C.muted, textAlign:"center", padding:40 }}>এখনো কোনো বাজার নেই</div>}
+          </div>
+        )}
+
+        {/* ══════════════ INVENTORY ══════════════ */}
+        {tab==="inventory" && (
+          <div>
+            {/* Add Item Button & Expandable Form */}
+            <div style={card()}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom: showAddInvForm ? 14 : 0 }}>
+                <div style={{ fontSize:13, fontWeight:700, color: C.primary }}>📦 মজুদ বাজার</div>
+                <button onClick={()=>setShowAddInvForm(p=>!p)} style={{
+                  background: showAddInvForm ? `${C.danger}22` : `${C.primary}22`,
+                  border: `1px solid ${showAddInvForm ? C.danger : C.primary}`,
+                  borderRadius:10, padding:"6px 16px",
+                  color: showAddInvForm ? C.danger : C.primary,
+                  cursor:"pointer", fontSize:12, fontFamily:"inherit", fontWeight:700
+                }}>{showAddInvForm ? "✕ বাতিল" : "＋ নতুন আইটেম"}</button>
+              </div>
+
+              {showAddInvForm && (
+                <div>
+                  <div style={{ display:"flex", gap:8, marginBottom:8 }}>
+                    <div style={{ flex:2 }}>
+                      <div style={{ fontSize:11, color: C.muted, marginBottom:4 }}>আইটেমের নাম *</div>
+                      <input value={invName} onChange={e=>setInvName(e.target.value)} placeholder="যেমন: সরিষার তেল, চিনি..." style={inp()} onKeyDown={e=>e.key==="Enter"&&addInventoryItem()} autoFocus />
+                    </div>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:11, color: C.muted, marginBottom:4 }}>একক *</div>
+                      <input value={invUnit} onChange={e=>setInvUnit(e.target.value)} placeholder="কেজি / লিটার..." style={inp()} />
+                    </div>
+                  </div>
+                  <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:11, color: C.muted, marginBottom:4 }}>প্রারম্ভিক পরিমাণ</div>
+                      <input type="number" value={invQty} onChange={e=>setInvQty(e.target.value)} placeholder="০" style={inp()} />
+                    </div>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:11, color: C.muted, marginBottom:4 }}>সতর্কতা সীমা</div>
+                      <input type="number" value={invMin} onChange={e=>setInvMin(e.target.value)} placeholder="সর্বনিম্ন" style={inp()} />
+                    </div>
+                  </div>
+                  <button onClick={addInventoryItem} style={{ ...btn(C.primary), width:"100%" }}>✓ আইটেম যোগ করুন</button>
+                  <div style={{ marginTop:10, fontSize:11, color: C.muted, lineHeight:1.6 }}>
+                    💡 টিপস: সতর্কতা সীমা দিলে মজুদ কম হলে ড্যাশবোর্ডে সংকেত দেখাবে।
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Stats bar */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:14 }}>
+              {[
+                ["মোট আইটেম", `${inventory.length}টি`, C.primary],
+                ["কম মজুদ", `${lowInventory.length}টি`, lowInventory.length>0?C.danger:C.success],
+                ["স্বাভাবিক", `${inventory.length-lowInventory.length}টি`, C.success],
+              ].map(([l,v,c])=>(
+                <div key={l} style={{ background: C.card, borderRadius:10, padding:12, border:`1px solid ${c}33`, textAlign:"center" }}>
+                  <div style={{ fontSize:9, color: C.muted }}>{l}</div>
+                  <div style={{ fontSize:18, fontWeight:700, color:c }}>{v}</div>
+                </div>
+              ))}
+            </div>
+
+            {inventory.map(item => {
+              const isLow = item.quantity <= item.minAlert && item.minAlert > 0;
+              const pct = item.minAlert > 0 ? Math.min(100, (item.quantity / (item.minAlert * 3)) * 100) : 50;
+              const barColor = isLow ? C.danger : pct > 66 ? C.success : C.accent;
+              return (
+                <div key={item.id} style={card({ border:`1px solid ${isLow ? C.danger : C.border}44`, background: isLow ? `${C.card}` : C.card })}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:14, fontWeight:700, color: isLow ? C.danger : C.text }}>
+                        {item.name} {isLow ? "⚠️" : ""}
+                      </div>
+                      <div style={{ fontSize:11, color: C.muted, marginTop:2 }}>
+                        সতর্কতা সীমা: {item.minAlert} {item.unit}
+                      </div>
+                    </div>
+                    <div style={{ textAlign:"right" }}>
+                      <div style={{ fontSize:24, fontWeight:700, color: isLow ? C.danger : C.primary }}>{item.quantity}</div>
+                      <div style={{ fontSize:11, color: C.muted }}>{item.unit}</div>
+                    </div>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div style={{ height:7, background: C.surface, borderRadius:4, marginBottom:12, overflow:"hidden" }}>
+                    <div style={{ height:"100%", width:`${pct}%`, background: barColor, borderRadius:4, transition:"width .3s" }} />
+                  </div>
+
+                  {invAdjId === item.id ? (
+                    <div>
+                      <div style={{ display:"flex", gap:8, marginBottom:8 }}>
+                        <button onClick={()=>setInvAdjType("add")} style={{ flex:1, padding:"8px", borderRadius:8, border:`1px solid ${invAdjType==="add"?C.success:C.border}`, background:invAdjType==="add"?`${C.success}22`:"transparent", color:invAdjType==="add"?C.success:C.muted, cursor:"pointer", fontSize:13, fontFamily:"inherit" }}>+ যোগ</button>
+                        <button onClick={()=>setInvAdjType("remove")} style={{ flex:1, padding:"8px", borderRadius:8, border:`1px solid ${invAdjType==="remove"?C.danger:C.border}`, background:invAdjType==="remove"?`${C.danger}22`:"transparent", color:invAdjType==="remove"?C.danger:C.muted, cursor:"pointer", fontSize:13, fontFamily:"inherit" }}>− বিয়োগ</button>
+                      </div>
+                      <div style={{ display:"flex", gap:8 }}>
+                        <input type="number" value={invAdjAmt} onChange={e=>setInvAdjAmt(e.target.value)} placeholder="পরিমাণ" style={{ ...inp(), flex:1 }} onKeyDown={e=>e.key==="Enter"&&adjustInventory(item.id)} />
+                        <button onClick={()=>adjustInventory(item.id)} style={btn(C.primary)}>✓</button>
+                        <button onClick={()=>setInvAdjId(null)} style={{ background:`${C.danger}22`, border:"none", borderRadius:8, padding:"10px 16px", color:C.danger, cursor:"pointer" }}>✕</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display:"flex", gap:8 }}>
+                      <button onClick={()=>setInvAdjId(item.id)} style={{ flex:1, padding:"9px", borderRadius:8, border:`1px solid ${C.borderHi}`, background:`${C.secondary}18`, color:C.secondary, cursor:"pointer", fontSize:12, fontFamily:"inherit", fontWeight:600 }}>✏️ পরিমাণ আপডেট</button>
+                      <button onClick={()=>removeInventoryItem(item.id)} style={{ background:`${C.danger}22`, border:`1px solid ${C.danger}44`, borderRadius:8, padding:"9px 14px", color:C.danger, cursor:"pointer", fontSize:12 }}>🗑️</button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {inventory.length === 0 && (
+              <div style={{ textAlign:"center", padding:40, color: C.muted }}>
+                <div style={{ fontSize:32, marginBottom:10 }}>📦</div>
+                <div>কোনো আইটেম নেই। উপরে "নতুন আইটেম" যোগ করুন।</div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ══════════════ RECEIPTS ══════════════ */}
+        {tab==="receipts" && (
+          <div>
+            {/* Telegram status banner */}
+            {(!telegramBotToken || !telegramChatId) && (
+              <div style={{ background:`${C.accent}18`, border:`1px solid ${C.accent}44`, borderRadius:12, padding:14, marginBottom:14, display:"flex", gap:12, alignItems:"center" }}>
+                <div style={{ fontSize:22 }}>📱</div>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:700, color: C.accent }}>Telegram Bot সংযুক্ত নয়</div>
+                  <div style={{ fontSize:11, color: C.muted, marginTop:2 }}>সেটিং → Telegram ট্যাবে Token ও Chat ID দিন — তাহলে রশিদ স্বয়ংক্রিয়ভাবে টেলিগ্রামে সেভ হবে।</div>
+                  <button onClick={()=>{ setTab("settings"); setSettingsTab("telegram"); }} style={{ ...btn(C.accent), marginTop:8, fontSize:11, padding:"6px 14px" }}>⚙️ Telegram সেটআপ করুন</button>
+                </div>
+              </div>
+            )}
+            {telegramBotToken && telegramChatId && (
+              <div style={{ background:`${C.success}18`, border:`1px solid ${C.success}44`, borderRadius:12, padding:12, marginBottom:14, display:"flex", alignItems:"center", gap:10 }}>
+                <div style={{ fontSize:16 }}>✅</div>
+                <div style={{ fontSize:12, color: C.success, fontWeight:600 }}>Telegram Bot সংযুক্ত — রশিদ আপলোড হলে স্বয়ংক্রিয়ভাবে পাঠানো হবে</div>
+              </div>
+            )}
+
+            <div style={card()}>
+              <div style={{ fontSize:13, fontWeight:700, color: C.primary, marginBottom:12 }}>🧾 বাজারের রশিদ সেভ করুন</div>
+              <div style={{ marginBottom:8 }}>
+                <div style={{ fontSize:11, color: C.muted, marginBottom:4 }}>তারিখ</div>
+                <input type="date" value={receiptDate} onChange={e=>setReceiptDate(e.target.value)} style={inp()} />
+              </div>
+              <div style={{ marginBottom:12 }}>
+                <div style={{ fontSize:11, color: C.muted, marginBottom:4 }}>নোট (ঐচ্ছিক)</div>
+                <input value={receiptNote} onChange={e=>setReceiptNote(e.target.value)} placeholder="যেমন: সাপ্তাহিক বাজার" style={inp()} />
+              </div>
+              <input type="file" ref={receiptInputRef} accept="image/*" onChange={handleReceiptUpload} style={{ display:"none" }} />
+              <button onClick={()=>receiptInputRef.current.click()} disabled={telegramSending} style={{ ...btn(C.primary), width:"100%" }}>
+                {telegramSending ? "⏳ টেলিগ্রামে পাঠানো হচ্ছে..." : "📷 ছবি আপলোড করুন"}
+              </button>
+              <div style={{ fontSize:11, color: C.muted, marginTop:8, lineHeight:1.6 }}>
+                💡 ছবি তুলুন বা গ্যালারি থেকে বাছুন। Telegram সেটআপ করা থাকলে ডেট-সহ স্বয়ংক্রিয়ভাবে বটে পাঠানো হবে।
+              </div>
+            </div>
+
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+              {receipts.sort((a,b)=>b.date.localeCompare(a.date)).map(r => (
+                <div key={r.id} onClick={()=>setViewReceipt(r)} style={{ background: C.card, borderRadius:12, border:`1px solid ${C.border}`, overflow:"hidden", cursor:"pointer", transition:"border-color .15s" }}>
+                  <img src={r.image} alt="receipt" style={{ width:"100%", height:140, objectFit:"cover" }} />
+                  <div style={{ padding:"10px 12px" }}>
+                    <div style={{ fontSize:12, fontWeight:700, color: C.text, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{r.note}</div>
+                    <div style={{ fontSize:11, color: C.muted, marginTop:2 }}>{fmtDate(r.date)}</div>
+                  </div>
+                </div>
+              ))}
+              {receipts.length===0 && <div style={{ gridColumn:"1/-1", textAlign:"center", color: C.muted, padding:40 }}>
+                <div style={{ fontSize:32, marginBottom:8 }}>🧾</div>
+                এখনো কোনো রশিদ নেই
+              </div>}
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════ MEMBERS ══════════════ */}
+        {tab==="members" && (
+          <div>
+            <div style={{ display:"flex", gap:8, marginBottom:14 }}>
+              <input value={newMemberName} onChange={e=>setNewMemberName(e.target.value)} placeholder="সদস্যের নাম..." onKeyDown={e=>e.key==="Enter"&&addMember()} style={{ ...inp(), flex:2 }} />
+              <input value={newMemberRoom} onChange={e=>setNewMemberRoom(e.target.value)} placeholder="রুম নং" onKeyDown={e=>e.key==="Enter"&&addMember()} style={{ ...inp(), flex:1 }} />
+              <button onClick={addMember} style={btn(C.primary)}>+ যোগ</button>
+            </div>
+            {members.map(m => {
+              const cost = getMemberMonthCost(m.id);
+              const bal = m.deposit - cost;
+              const meals = currentMonthDates.reduce((s,d)=>s+getMemberDailyMeals(m.id,d),0);
+              return (
+                <div key={m.id} style={card({ border:`1px solid ${bal<0?C.danger:C.border}` })}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                      <span style={{ background:`${C.accent}22`, color:C.accent, fontWeight:700, fontSize:12, padding:"3px 10px", borderRadius:20, border:`1px solid ${C.accent}44` }}>🏠 {m.room||"-"}</span>
+                      {editingMember===m.id ? (
+                        <input defaultValue={m.name} autoFocus
+                          onBlur={e=>{setMembers(p=>p.map(x=>x.id===m.id?{...x,name:e.target.value}:x));setEditingMember(null);}}
+                          style={{ background: C.surface, border:`1px solid ${C.primary}`, color: C.text, borderRadius:6, padding:"4px 10px", fontSize:14, fontFamily:"inherit", width:140 }} />
+                      ) : (
+                        <span style={{ fontSize:14, fontWeight:600, cursor:"pointer" }} onClick={()=>setEditingMember(m.id)}>{m.name} <span style={{ fontSize:11, color: C.muted }}>✏️</span></span>
+                      )}
+                    </div>
+                    <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                      <span style={{ fontSize:12, fontWeight:700, color:bal>=0?C.success:C.danger, background:bal>=0?`${C.success}22`:`${C.danger}22`, padding:"3px 10px", borderRadius:20 }}>
+                        {bal>=0?`+৳${Math.round(bal)}`:`-৳${Math.abs(Math.round(bal))}`}
+                      </span>
+                      <button onClick={()=>{if(window.confirm("মুছবেন?"))setMembers(p=>p.filter(x=>x.id!==m.id));}} style={{ background:`${C.danger}22`, border:"none", borderRadius:6, padding:"3px 10px", color:C.danger, cursor:"pointer", fontSize:11 }}>মুছুন</button>
+                    </div>
+                  </div>
+                  <div style={{ display:"flex", gap:6, marginBottom:10 }}>
+                    {[["সকাল","morning",C.accent],["দুপুর","lunch",C.success],["রাত","dinner",C.secondary]].map(([label,key,color])=>(
+                      <button key={key} onClick={()=>toggleDefaultMeal(m.id,key)} style={{ flex:1, padding:"6px 4px", borderRadius:8, border:`1px solid ${m.activeMeals[key]?color:C.border}`, background:m.activeMeals[key]?`${color}22`:"transparent", color:m.activeMeals[key]?color:C.muted, cursor:"pointer", fontSize:12, fontFamily:"inherit", fontWeight:600 }}>
+                        {label} {m.activeMeals[key]?"✓":"✗"}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ display:"flex", gap:8, marginBottom:10 }}>
+                    {[["খরচ",`৳${Math.round(cost)}`,C.danger],["মিল",`${meals.toFixed(1)}`,C.secondary],["জমা",`৳${m.deposit}`,C.accent]].map(([l,v,c])=>(
+                      <div key={l} style={{ flex:1, background: C.surface, borderRadius:8, padding:"8px 10px" }}>
+                        <div style={{ fontSize:9, color: C.muted }}>{l}</div>
+                        <div style={{ fontSize:14, fontWeight:700, color:c }}>{v}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display:"flex", gap:8 }}>
+                    <input type="number" placeholder="টাকা জমা দিন (৳)" value={depositInput[m.id]||""} onChange={e=>setDepositInput(p=>({...p,[m.id]:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addDeposit(m.id)} style={{ ...inp(), flex:1, padding:"8px 12px", fontSize:13 }} />
+                    <button onClick={()=>addDeposit(m.id)} style={{ background:`${C.accent}22`, border:`1px solid ${C.accent}`, borderRadius:8, padding:"8px 16px", color:C.accent, cursor:"pointer", fontSize:12, fontFamily:"inherit", fontWeight:700 }}>জমা</button>
+                  </div>
+                  {(m.depositHistory||[]).length>0 && (
+                    <div style={{ marginTop:10, paddingTop:8, borderTop:`1px solid ${C.border}` }}>
+                      <div style={{ fontSize:11, color: C.muted, marginBottom:6 }}>জমার ইতিহাস:</div>
+                      {[...(m.depositHistory||[])].reverse().slice(0,4).map((d,i)=>(
+                        <div key={i} style={{ display:"flex", justifyContent:"space-between", fontSize:12, color: C.muted, paddingBottom:3 }}>
+                          <span>{fmtDate(d.date)}</span><span style={{color:C.accent}}>৳{d.amount}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ══════════════ CALCULATOR ══════════════ */}
+        {tab==="calculator" && (
+          <div>
+            {/* Mode selector */}
+            <div style={{ display:"flex", gap:5, marginBottom:14, overflowX:"auto", paddingBottom:2 }}>
+              {[["basic","🔢 সাধারণ"],["scientific","🔬 বৈজ্ঞানিক"],["meal","🍽️ মিল"],["split","👥 বিল ভাগ"],["emi","🏦 EMI"],["gst","🧾 GST/VAT"]].map(([m,l])=>(
+                <button key={m} onClick={()=>setCalcMode(m)} style={{
+                  flex:"0 0 auto", padding:"8px 12px", borderRadius:10, fontFamily:"inherit", cursor:"pointer",
+                  fontSize:11, fontWeight:700, whiteSpace:"nowrap",
+                  border:`1px solid ${calcMode===m?C.primary:C.border}`,
+                  background:calcMode===m?`${C.primary}22`:C.surface,
+                  color:calcMode===m?C.primary:C.muted
+                }}>{l}</button>
+              ))}
+            </div>
+
+            {/* ── Basic Calculator ── */}
+            {calcMode==="basic" && (
+              <div style={card()}>
+                {/* Display */}
+                <div style={{ background:C.surface, borderRadius:12, padding:"14px 18px", marginBottom:14, minHeight:88, display:"flex", flexDirection:"column", justifyContent:"flex-end", border:`1px solid ${C.border}` }}>
+                  <div style={{ fontSize:11, color:C.muted, minHeight:18, textAlign:"right" }}>{calcExpression || "\u00a0"}</div>
+                  <div style={{ fontSize:38, fontWeight:700, color:C.primary, textAlign:"right", letterSpacing:"-1px", overflowX:"auto", whiteSpace:"nowrap" }}>{calcDisplay}</div>
+                </div>
+
+                {/* Buttons grid */}
+                {[
+                  [["AC","clear",C.danger,""],["±","sign",C.muted,""],["％","pct",C.muted,""],["÷","op",C.accent,"÷"]],
+                  [["৭","num","","7"],["৮","num","","8"],["৯","num","","9"],["×","op",C.accent,"×"]],
+                  [["৪","num","","4"],["৫","num","","5"],["৬","num","","6"],["−","op",C.accent,"−"]],
+                  [["১","num","","1"],["২","num","","2"],["৩","num","","3"],["＋","op",C.accent,"+"]],
+                  [["⌫","back",C.muted,""],["০","num","","0"],["·","dot","","."],[" =","eq",C.primary,""]],
+                ].map((row, ri) => (
+                  <div key={ri} style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:8 }}>
+                    {row.map(([label, type, color, val], ci) => {
+                      const isEq = type==="eq";
+                      const isDanger = type==="clear";
+                      const isOp = type==="op";
+                      const bg = isEq ? C.primary : isDanger ? `${C.danger}22` : isOp ? `${C.accent}22` : C.surface;
+                      const fc = isEq ? "#050d0f" : isDanger ? C.danger : isOp ? C.accent : C.text;
+                      return (
+                        <button key={ci} onClick={()=>{
+                          if(type==="num"||type==="dot") calcInput(val);
+                          else if(type==="op") calcOp(val);
+                          else if(type==="eq") calcEval();
+                          else if(type==="clear") calcClear();
+                          else if(type==="back") calcBackspace();
+                          else if(type==="sign") calcToggleSign();
+                          else if(type==="pct") calcPercent();
+                        }} style={{
+                          padding:"16px 4px", borderRadius:10, border:`1px solid ${isOp||isEq?`${color}44`:C.border}`,
+                          background:bg, color:fc, fontFamily:"inherit", fontWeight:700,
+                          fontSize:type==="num"?18:16, cursor:"pointer", transition:"opacity .1s"
+                        }}>{label}</button>
+                      );
+                    })}
+                  </div>
+                ))}
+
+                {/* Quick from app */}
+                <div style={{ marginTop:10, padding:10, background:C.surface, borderRadius:10, border:`1px solid ${C.border}` }}>
+                  <div style={{ fontSize:11, color:C.muted, marginBottom:8, fontWeight:700 }}>📌 দ্রুত মান লোড করুন</div>
+                  <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                    {[
+                      [`হাতে ৳${Math.round(cashInHand)}`, Math.round(cashInHand)],
+                      [`বাজার ৳${Math.round(totalGroceriesThisMonth)}`, Math.round(totalGroceriesThisMonth)],
+                      [`জমা ৳${Math.round(totalDeposit)}`, Math.round(totalDeposit)],
+                      [`রেট ৳${calculatedMealRate.toFixed(2)}`, parseFloat(calculatedMealRate.toFixed(2))],
+                    ].map(([label, val])=>(
+                      <button key={label} onClick={()=>{ setCalcDisplay(String(val)); setCalcWaiting(false); }} style={{
+                        background:`${C.secondary}18`, border:`1px solid ${C.secondary}44`, borderRadius:20,
+                        padding:"4px 10px", color:C.secondary, cursor:"pointer", fontSize:11, fontFamily:"inherit"
+                      }}>{label}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Scientific Calculator ── */}
+            {calcMode==="scientific" && (
+              <div style={card()}>
+                {/* Display */}
+                <div style={{ background:C.surface, borderRadius:12, padding:"14px 18px", marginBottom:14, minHeight:88, display:"flex", flexDirection:"column", justifyContent:"flex-end", border:`1px solid ${C.border}` }}>
+                  <div style={{ fontSize:11, color:C.muted, minHeight:18, textAlign:"right" }}>{calcExpression || "\u00a0"}</div>
+                  <div style={{ fontSize:34, fontWeight:700, color:C.primary, textAlign:"right", letterSpacing:"-1px", overflowX:"auto", whiteSpace:"nowrap" }}>{calcDisplay}</div>
+                </div>
+
+                {/* Scientific function buttons */}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:6, marginBottom:8 }}>
+                  {[
+                    ["√x","sqrt",C.secondary],["x²","sq",C.secondary],["x³","cube",C.secondary],["1/x","inv",C.secondary],
+                    ["sin","sin",C.accent],["cos","cos",C.accent],["tan","tan",C.accent],["n!","fact",C.accent],
+                    ["log","log","#a78bfa"],["ln","ln","#a78bfa"],["π","pi","#a78bfa"],["e","e","#a78bfa"],
+                  ].map(([label, fn, color])=>(
+                    <button key={fn} onClick={()=>calcScientific(fn)} style={{
+                      padding:"12px 4px", borderRadius:8, border:`1px solid ${color}44`,
+                      background:`${color}18`, color:color, fontFamily:"inherit", fontWeight:700,
+                      fontSize:13, cursor:"pointer"
+                    }}>{label}</button>
+                  ))}
+                </div>
+
+                {/* Basic number pad */}
+                {[
+                  [["AC","clear",C.danger,""],["±","sign",C.muted,""],["％","pct",C.muted,""],["÷","op",C.accent,"÷"]],
+                  [["৭","num","","7"],["৮","num","","8"],["৯","num","","9"],["×","op",C.accent,"×"]],
+                  [["৪","num","","4"],["৫","num","","5"],["৬","num","","6"],["−","op",C.accent,"−"]],
+                  [["১","num","","1"],["২","num","","2"],["৩","num","","3"],["＋","op",C.accent,"+"]],
+                  [["⌫","back",C.muted,""],["০","num","","0"],["·","dot","","."],[" =","eq",C.primary,""]],
+                ].map((row, ri) => (
+                  <div key={ri} style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:6, marginBottom:6 }}>
+                    {row.map(([label, type, color, val], ci) => {
+                      const isEq = type==="eq"; const isDanger = type==="clear"; const isOp = type==="op";
+                      const bg = isEq ? C.primary : isDanger ? `${C.danger}22` : isOp ? `${C.accent}22` : C.surface;
+                      const fc = isEq ? "#050d0f" : isDanger ? C.danger : isOp ? C.accent : C.text;
+                      return (
+                        <button key={ci} onClick={()=>{
+                          if(type==="num"||type==="dot") calcInput(val);
+                          else if(type==="op") calcOp(val);
+                          else if(type==="eq") calcEval();
+                          else if(type==="clear") calcClear();
+                          else if(type==="back") calcBackspace();
+                          else if(type==="sign") calcToggleSign();
+                          else if(type==="pct") calcPercent();
+                        }} style={{
+                          padding:"14px 4px", borderRadius:8, border:`1px solid ${isOp||isEq?`${color}44`:C.border}`,
+                          background:bg, color:fc, fontFamily:"inherit", fontWeight:700,
+                          fontSize:type==="num"?16:14, cursor:"pointer"
+                        }}>{label}</button>
+                      );
+                    })}
+                  </div>
+                ))}
+
+                {calcHistory.length > 0 && (
+                  <div style={{ marginTop:10, padding:10, background:C.surface, borderRadius:10, border:`1px solid ${C.border}` }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+                      <div style={{ fontSize:11, color:C.muted, fontWeight:700 }}>🕘 ইতিহাস</div>
+                      <button onClick={()=>setCalcHistory([])} style={{ background:"none", border:"none", color:C.muted, cursor:"pointer", fontSize:11 }}>সাফ</button>
+                    </div>
+                    {calcHistory.slice(0,8).map((h,i)=>(
+                      <div key={i} style={{ fontSize:11, color:C.muted, padding:"3px 0", borderBottom:`1px solid ${C.border}22`, fontFamily:"monospace" }}>{h}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── EMI Calculator ── */}
+            {calcMode==="emi" && (
+              <div>
+                <div style={card()}>
+                  <div style={{ fontSize:13, fontWeight:700, color:C.primary, marginBottom:14 }}>🏦 EMI / কিস্তি হিসাব</div>
+                  <div style={{ marginBottom:10 }}>
+                    <div style={{ fontSize:11, color:C.muted, marginBottom:4 }}>মূল পরিমাণ — Loan Amount (৳)</div>
+                    <input type="number" value={emiPrincipal} onChange={e=>setEmiPrincipal(e.target.value)} placeholder="যেমন: 500000" style={inp()} />
+                  </div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
+                    <div>
+                      <div style={{ fontSize:11, color:C.muted, marginBottom:4 }}>বার্ষিক সুদের হার (%)</div>
+                      <input type="number" value={emiRate} onChange={e=>setEmiRate(e.target.value)} placeholder="যেমন: 9.5" style={inp()} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize:11, color:C.muted, marginBottom:4 }}>মেয়াদ (মাস)</div>
+                      <input type="number" value={emiMonths} onChange={e=>setEmiMonths(e.target.value)} placeholder="যেমন: 60" style={inp()} />
+                    </div>
+                  </div>
+                  {/* Quick presets */}
+                  <div style={{ display:"flex", gap:6, marginBottom:14, flexWrap:"wrap" }}>
+                    {[["১২ মাস","12"],["২৪ মাস","24"],["৩৬ মাস","36"],["৬০ মাস","60"],["১২০ মাস","120"]].map(([l,v])=>(
+                      <button key={v} onClick={()=>setEmiMonths(v)} style={{ background:`${C.secondary}18`, border:`1px solid ${C.secondary}44`, borderRadius:20, padding:"4px 10px", color:C.secondary, cursor:"pointer", fontSize:11, fontFamily:"inherit" }}>{l}</button>
+                    ))}
+                  </div>
+                  {calcEMI() && (() => {
+                    const r = calcEMI();
+                    return (
+                      <div style={{ background:`${C.primary}12`, borderRadius:12, padding:16, border:`1px solid ${C.primary}33` }}>
+                        <div style={{ textAlign:"center", marginBottom:14 }}>
+                          <div style={{ fontSize:11, color:C.muted }}>মাসিক কিস্তি (EMI)</div>
+                          <div style={{ fontSize:40, fontWeight:700, color:C.primary }}>৳{parseFloat(r.emi).toLocaleString("bn-BD")}</div>
+                        </div>
+                        {[
+                          ["মূল পরিমাণ", `৳${parseFloat(emiPrincipal).toLocaleString()}`, C.secondary],
+                          ["মোট পরিশোধ", `৳${parseFloat(r.totalPay).toLocaleString()}`, C.accent],
+                          ["মোট সুদ", `৳${parseFloat(r.totalInterest).toLocaleString()}`, C.danger],
+                          ["সুদের অনুপাত", `${((parseFloat(r.totalInterest)/parseFloat(r.totalPay))*100).toFixed(1)}%`, C.warn],
+                        ].map(([l,v,c])=>(
+                          <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:`1px solid ${C.border}`, fontSize:13 }}>
+                            <span style={{ color:C.muted }}>{l}</span>
+                            <span style={{ fontWeight:700, color:c }}>{v}</span>
+                          </div>
+                        ))}
+                        <div style={{ marginTop:10, fontSize:11, color:C.muted, lineHeight:1.6 }}>
+                          💡 সুদের হার {emiRate}% বার্ষিক = {(parseFloat(emiRate)/12).toFixed(3)}% মাসিক
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+                <div style={card({ border:`1px solid ${C.accent}33` })}>
+                  <div style={{ fontSize:12, fontWeight:700, color:C.accent, marginBottom:8 }}>📌 সাধারণ সুদের হার</div>
+                  {[["বাংলাদেশ ব্যাংক (গৃহ ঋণ)","9%"],["কার ঋণ","12–14%"],["ব্যক্তিগত ঋণ","16–18%"],["ক্রেডিট কার্ড","24–36%"]].map(([l,v])=>(
+                    <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:`1px solid ${C.border}22`, fontSize:12 }}>
+                      <span style={{ color:C.muted }}>{l}</span>
+                      <button onClick={()=>setEmiRate(v.replace(/[^0-9.]/g,"").split("–")[0])} style={{ background:`${C.accent}18`, border:`1px solid ${C.accent}44`, borderRadius:10, padding:"2px 10px", color:C.accent, cursor:"pointer", fontSize:11, fontFamily:"inherit" }}>{v} →</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── GST / VAT Calculator ── */}
+            {calcMode==="gst" && (
+              <div>
+                <div style={card()}>
+                  <div style={{ fontSize:13, fontWeight:700, color:C.primary, marginBottom:14 }}>🧾 GST / VAT হিসাব</div>
+
+                  <div style={{ display:"flex", gap:6, marginBottom:14 }}>
+                    {[["add","যোগ করুন (+ VAT)"],["remove","বাদ দিন (VAT ছাড়া)"]].map(([m,l])=>(
+                      <button key={m} onClick={()=>setGstMode(m)} style={{
+                        flex:1, padding:"10px", borderRadius:10, fontFamily:"inherit", cursor:"pointer",
+                        fontSize:12, fontWeight:700, border:`1px solid ${gstMode===m?C.primary:C.border}`,
+                        background:gstMode===m?`${C.primary}22`:C.surface, color:gstMode===m?C.primary:C.muted
+                      }}>{l}</button>
+                    ))}
+                  </div>
+
+                  <div style={{ marginBottom:10 }}>
+                    <div style={{ fontSize:11, color:C.muted, marginBottom:4 }}>{gstMode==="add"?"মূল মূল্য (VAT ছাড়া)":"মোট মূল্য (VAT সহ)"} (৳)</div>
+                    <input type="number" value={gstAmount} onChange={e=>setGstAmount(e.target.value)} placeholder="যেমন: 1000" style={inp()} />
+                  </div>
+
+                  <div style={{ marginBottom:14 }}>
+                    <div style={{ fontSize:11, color:C.muted, marginBottom:6 }}>VAT / GST হার</div>
+                    <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:8 }}>
+                      {["5","7.5","10","15","20"].map(r=>(
+                        <button key={r} onClick={()=>setGstRate(r)} style={{ background:gstRate===r?`${C.primary}22`:C.surface, border:`1px solid ${gstRate===r?C.primary:C.border}`, borderRadius:20, padding:"4px 14px", color:gstRate===r?C.primary:C.muted, cursor:"pointer", fontSize:12, fontFamily:"inherit", fontWeight:700 }}>{r}%</button>
+                      ))}
+                    </div>
+                    <input type="number" value={gstRate} onChange={e=>setGstRate(e.target.value)} placeholder="কাস্টম হার" style={inp()} />
+                  </div>
+
+                  {calcGST() && (() => {
+                    const g = calcGST();
+                    return (
+                      <div style={{ background:`${C.primary}12`, borderRadius:12, padding:16, border:`1px solid ${C.primary}33` }}>
+                        {[
+                          ["মূল মূল্য (VAT ছাড়া)", `৳${parseFloat(g.original).toLocaleString()}`, C.secondary],
+                          [`VAT (${gstRate}%)`, `৳${parseFloat(g.tax).toLocaleString()}`, C.danger],
+                          ["মোট মূল্য (VAT সহ)", `৳${parseFloat(g.total).toLocaleString()}`, C.primary],
+                        ].map(([l,v,c])=>(
+                          <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"10px 0", borderBottom:`1px solid ${C.border}`, fontSize:13 }}>
+                            <span style={{ color:C.muted }}>{l}</span>
+                            <span style={{ fontSize:16, fontWeight:700, color:c }}>{v}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+                <div style={card({ border:`1px solid ${C.accent}33` })}>
+                  <div style={{ fontSize:12, fontWeight:700, color:C.accent, marginBottom:8 }}>📌 বাংলাদেশের VAT হার</div>
+                  {[["সাধারণ পণ্য ও সেবা","15%"],["ওষুধ ও চিকিৎসা","0%"],["প্যাকেজড খাবার","5%"],["মোবাইল সেবা","15%"]].map(([l,v])=>(
+                    <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:`1px solid ${C.border}22`, fontSize:12 }}>
+                      <span style={{ color:C.muted }}>{l}</span>
+                      <button onClick={()=>setGstRate(v.replace("%",""))} style={{ background:`${C.accent}18`, border:`1px solid ${C.accent}44`, borderRadius:10, padding:"2px 10px", color:C.accent, cursor:"pointer", fontSize:11, fontFamily:"inherit" }}>{v} →</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Meal Cost Calculator ── */}
+            {calcMode==="meal" && (
+              <div>
+                <div style={card()}>
+                  <div style={{ fontSize:13, fontWeight:700, color:C.primary, marginBottom:14 }}>🍽️ মিল খরচ হিসাব</div>
+
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
+                    <div>
+                      <div style={{ fontSize:11, color:C.muted, marginBottom:4 }}>মিল ইউনিট</div>
+                      <input type="number" value={calcMealUnits} onChange={e=>setCalcMealUnits(e.target.value)} placeholder="যেমন: 25.5" style={inp()} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize:11, color:C.muted, marginBottom:4 }}>মিল রেট (৳)</div>
+                      <input type="number" value={calcMealRateInput} onChange={e=>setCalcMealRateInput(e.target.value)} placeholder={`৳${calculatedMealRate.toFixed(2)}`} style={inp()} />
+                    </div>
+                  </div>
+
+                  {/* Quick rate load */}
+                  <div style={{ display:"flex", gap:6, marginBottom:14, flexWrap:"wrap" }}>
+                    <button onClick={()=>setCalcMealRateInput(calculatedMealRate.toFixed(2))} style={{ background:`${C.primary}22`, border:`1px solid ${C.primary}44`, borderRadius:20, padding:"4px 12px", color:C.primary, cursor:"pointer", fontSize:11, fontFamily:"inherit" }}>
+                      লাইভ রেট ৳{calculatedMealRate.toFixed(2)}
+                    </button>
+                    <button onClick={()=>setCalcMealRateInput(String(mealRate))} style={{ background:`${C.secondary}22`, border:`1px solid ${C.secondary}44`, borderRadius:20, padding:"4px 12px", color:C.secondary, cursor:"pointer", fontSize:11, fontFamily:"inherit" }}>
+                      সেট রেট ৳{mealRate}
+                    </button>
+                  </div>
+
+                  {calcMealUnits && calcMealRateInput && (
+                    <div style={{ background:`${C.primary}12`, borderRadius:12, padding:16, border:`1px solid ${C.primary}33` }}>
+                      <div style={{ fontSize:11, color:C.muted, marginBottom:8 }}>হিসাব ফলাফল</div>
+                      {[
+                        ["মোট খরচ", `৳${(parseFloat(calcMealUnits)*parseFloat(calcMealRateInput)).toFixed(2)}`, C.primary],
+                        ["প্রতি দিন (৩০ দিন)", `৳${(parseFloat(calcMealUnits)*parseFloat(calcMealRateInput)/30).toFixed(2)}`, C.secondary],
+                      ].map(([l,v,c])=>(
+                        <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"7px 0", borderBottom:`1px solid ${C.border}`, fontSize:13 }}>
+                          <span style={{ color:C.muted }}>{l}</span>
+                          <span style={{ fontWeight:700, color:c }}>{v}</span>
+                        </div>
+                      ))}
+                      {/* Per-member breakdown */}
+                      <div style={{ marginTop:12, fontSize:11, color:C.muted, fontWeight:700, marginBottom:6 }}>সদস্যভিত্তিক প্রজেকশন</div>
+                      <div style={{ maxHeight:200, overflowY:"auto" }}>
+                        {members.map(m=>{
+                          const mMeals = currentMonthDates.reduce((s,d)=>s+getMemberDailyMeals(m.id,d),0);
+                          const mCost = mMeals * parseFloat(calcMealRateInput||0);
+                          return (
+                            <div key={m.id} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0", borderBottom:`1px solid ${C.border}22`, fontSize:12 }}>
+                              <span style={{ color:C.text }}>{m.name} <span style={{color:C.muted,fontSize:10}}>({mMeals.toFixed(1)} মিল)</span></span>
+                              <span style={{ color:C.accent, fontWeight:600 }}>৳{Math.round(mCost)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Meal rate target checker */}
+                <div style={card({ border:`1px solid ${C.accent}33` })}>
+                  <div style={{ fontSize:13, fontWeight:700, color:C.accent, marginBottom:12 }}>🎯 লক্ষ্যমাত্রা বিশ্লেষণ</div>
+                  {[
+                    ["বর্তমান মিল রেট", `৳${calculatedMealRate.toFixed(2)}`, rateStatus?.type==="high"?C.danger:rateStatus?.type==="ok"?C.success:C.accent],
+                    ["লক্ষ্য রেন্জ", `৳${MEAL_RATE_WARNING_MIN} – ৳${MEAL_RATE_WARNING_MAX}`, C.muted],
+                    ["পার্থক্য (লক্ষ্য মধ্য থেকে)", `৳${(calculatedMealRate - (MEAL_RATE_WARNING_MIN+MEAL_RATE_WARNING_MAX)/2).toFixed(2)}`, calculatedMealRate > (MEAL_RATE_WARNING_MIN+MEAL_RATE_WARNING_MAX)/2 ? C.danger : C.success],
+                    ["আদর্শ মাসিক বাজার বাজেট", `৳${Math.round(totalMealsThisMonth * (MEAL_RATE_WARNING_MIN+MEAL_RATE_WARNING_MAX)/2)}`, C.primary],
+                  ].map(([l,v,c])=>(
+                    <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:`1px solid ${C.border}`, fontSize:13 }}>
+                      <span style={{ color:C.muted }}>{l}</span>
+                      <span style={{ fontWeight:700, color:c }}>{v}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Split Bill Calculator ── */}
+            {calcMode==="split" && (
+              <div>
+                <div style={card()}>
+                  <div style={{ fontSize:13, fontWeight:700, color:C.primary, marginBottom:14 }}>👥 বিল ভাগ হিসাব</div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
+                    <div>
+                      <div style={{ fontSize:11, color:C.muted, marginBottom:4 }}>মোট বিল (৳)</div>
+                      <input type="number" value={calcSplitTotal} onChange={e=>setCalcSplitTotal(e.target.value)} placeholder="৳ মোট টাকা" style={inp()} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize:11, color:C.muted, marginBottom:4 }}>ভাগ করুন (জন)</div>
+                      <input type="number" value={calcSplitPeople} onChange={e=>setCalcSplitPeople(e.target.value)} placeholder="জন সংখ্যা" style={inp()} />
+                    </div>
+                  </div>
+
+                  {/* Quick fill from app */}
+                  <div style={{ display:"flex", gap:6, marginBottom:14, flexWrap:"wrap" }}>
+                    <button onClick={()=>setCalcSplitTotal(String(Math.round(totalGroceriesThisMonth)))} style={{ background:`${C.danger}18`, border:`1px solid ${C.danger}44`, borderRadius:20, padding:"4px 12px", color:C.danger, cursor:"pointer", fontSize:11, fontFamily:"inherit" }}>
+                      এই মাসের বাজার ৳{Math.round(totalGroceriesThisMonth)}
+                    </button>
+                    <button onClick={()=>setCalcSplitTotal(String(Math.round(totalCostThisMonth)))} style={{ background:`${C.accent}18`, border:`1px solid ${C.accent}44`, borderRadius:20, padding:"4px 12px", color:C.accent, cursor:"pointer", fontSize:11, fontFamily:"inherit" }}>
+                      মোট খরচ ৳{Math.round(totalCostThisMonth)}
+                    </button>
+                    <button onClick={()=>setCalcSplitPeople(String(members.length))} style={{ background:`${C.secondary}18`, border:`1px solid ${C.secondary}44`, borderRadius:20, padding:"4px 12px", color:C.secondary, cursor:"pointer", fontSize:11, fontFamily:"inherit" }}>
+                      সব সদস্য ({members.length})
+                    </button>
+                  </div>
+
+                  {calcSplitTotal && calcSplitPeople && parseFloat(calcSplitPeople) > 0 && (
+                    <div style={{ background:`${C.primary}12`, borderRadius:12, padding:16, border:`1px solid ${C.primary}33` }}>
+                      <div style={{ textAlign:"center", marginBottom:14 }}>
+                        <div style={{ fontSize:11, color:C.muted }}>প্রতিজনের ভাগ</div>
+                        <div style={{ fontSize:40, fontWeight:700, color:C.primary }}>৳{(parseFloat(calcSplitTotal)/parseFloat(calcSplitPeople)).toFixed(2)}</div>
+                        <div style={{ fontSize:12, color:C.muted }}>৳{calcSplitTotal} ÷ {calcSplitPeople} জন</div>
+                      </div>
+                      {[
+                        ["মোট", `৳${parseFloat(calcSplitTotal).toFixed(2)}`, C.text],
+                        ["প্রতিজন (পূর্ণ সংখ্যা)", `৳${Math.ceil(parseFloat(calcSplitTotal)/parseFloat(calcSplitPeople))}`, C.accent],
+                        ["প্রতিজন (ভগ্নাংশ)", `৳${(parseFloat(calcSplitTotal)/parseFloat(calcSplitPeople)).toFixed(2)}`, C.primary],
+                        ["মোট রাউন্ড আপ", `৳${Math.ceil(parseFloat(calcSplitTotal)/parseFloat(calcSplitPeople))*parseInt(calcSplitPeople)}`, C.secondary],
+                      ].map(([l,v,c])=>(
+                        <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"7px 0", borderBottom:`1px solid ${C.border}`, fontSize:13 }}>
+                          <span style={{ color:C.muted }}>{l}</span>
+                          <span style={{ fontWeight:700, color:c }}>{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Per-member actual bill */}
+                <div style={card()}>
+                  <div style={{ fontSize:13, fontWeight:700, color:C.primary, marginBottom:10 }}>📋 প্রকৃত সদস্য হিসাব</div>
+                  <div style={{ fontSize:11, color:C.muted, marginBottom:10 }}>মিল অনুযায়ী প্রত্যেকের প্রকৃত বিল:</div>
+                  <div style={{ maxHeight:280, overflowY:"auto" }}>
+                    {members.map(m=>{
+                      const cost = getMemberMonthCost(m.id);
+                      const bal = m.deposit - cost;
+                      return (
+                        <div key={m.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"7px 0", borderBottom:`1px solid ${C.border}22` }}>
+                          <span style={{ fontSize:12, color:C.text }}>{m.name} <span style={{color:C.muted,fontSize:10}}>রুম {m.room}</span></span>
+                          <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+                            <span style={{ fontSize:12, color:C.accent }}>৳{Math.round(cost)}</span>
+                            <span style={{ fontSize:11, fontWeight:700, color:bal>=0?C.success:C.danger, background:bal>=0?`${C.success}18`:`${C.danger}18`, padding:"2px 8px", borderRadius:20 }}>
+                              {bal>=0?`+৳${Math.round(bal)}`:`-৳${Math.abs(Math.round(bal))}`}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Calculation History */}
+            {calcMode==="basic" && calcHistory.length > 0 && (
+              <div style={card()}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:C.muted }}>🕘 ইতিহাস</div>
+                  <button onClick={()=>setCalcHistory([])} style={{ background:"none", border:"none", color:C.muted, cursor:"pointer", fontSize:11 }}>সাফ</button>
+                </div>
+                {calcHistory.map((h,i)=>(
+                  <div key={i} style={{ fontSize:12, color:C.muted, padding:"4px 0", borderBottom:`1px solid ${C.border}22`, fontFamily:"monospace" }}>{h}</div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ══════════════ ACCOUNTS ══════════════ */}
+        {tab==="accounts" && (
+          <div>
+            <div style={card()}>
+              <div style={{ fontSize:13, fontWeight:700, color: C.primary, marginBottom:12 }}>💰 সদস্যভিত্তিক হিসাব</div>
+              {members.map(m => {
+                const cost = getMemberMonthCost(m.id);
+                const bal = m.deposit - cost;
+                const meals = currentMonthDates.reduce((s,d)=>s+getMemberDailyMeals(m.id,d),0);
+                return (
+                  <div key={m.id} style={{ padding:"12px 0", borderBottom:`1px solid ${C.border}` }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+                      <div>
+                        <span style={{ fontWeight:700, color: C.text, fontSize:14 }}>{m.name}</span>
+                        <span style={{ fontSize:11, color: C.muted, marginLeft:8 }}>রুম {m.room}</span>
+                      </div>
+                      <span style={{ fontSize:14, fontWeight:700, color:bal>=0?C.success:C.danger }}>
+                        {bal>=0?`+৳${Math.round(bal)}`:`বকেয়া ৳${Math.abs(Math.round(bal))}`}
+                      </span>
+                    </div>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:6 }}>
+                      {[["মিল",`${meals.toFixed(1)} ইউ`,C.secondary],["খরচ",`৳${Math.round(cost)}`,C.danger],["জমা",`৳${m.deposit}`,C.accent]].map(([l,v,c])=>(
+                        <div key={l} style={{ background: C.surface, borderRadius:8, padding:"8px", textAlign:"center" }}>
+                          <div style={{ fontSize:10, color: C.muted }}>{l}</div>
+                          <div style={{ fontSize:13, fontWeight:700, color:c }}>{v}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════ SETTINGS ══════════════ */}
+        {tab==="settings" && (
+          <div>
+            <div style={{ display:"flex", gap:6, marginBottom:14, overflowX:"auto" }}>
+              {[["general","সাধারণ"],["meal","মিল"],["members_s","সদস্য"],["telegram","📱 Telegram"],["ai","🤖 AI"],["data","💾 ডেটা"]].map(([id,label])=>(
+                <button key={id} onClick={()=>setSettingsTab(id)} style={{ flex:"0 0 auto", padding:"8px 14px", borderRadius:20, border:`1px solid ${settingsTab===id?C.primary:C.border}`, background:settingsTab===id?`${C.primary}22`:"transparent", color:settingsTab===id?C.primary:C.muted, cursor:"pointer", fontSize:12, fontFamily:"inherit", whiteSpace:"nowrap" }}>{label}</button>
+              ))}
+            </div>
+
+            {settingsTab==="general" && (
+              <div>
+                <div style={card()}>
+                  <div style={{ fontSize:13, fontWeight:700, color: C.primary, marginBottom:12 }}>⚙️ সাধারণ সেটিং</div>
+                  <div style={{ marginBottom:12 }}>
+                    <div style={{ fontSize:11, color: C.muted, marginBottom:4 }}>বিশেষ দিন (সাপ্তাহিক)</div>
+                    <select value={specialWeekday} onChange={e=>setSpecialWeekday(parseInt(e.target.value))} style={inp()}>
+                      {DAYS_BN.map((d,i)=><option key={i} value={i}>{d}বার</option>)}
+                    </select>
+                  </div>
+                  <div style={{ fontSize:11, color: C.muted, padding:"10px 12px", background: C.surface, borderRadius:8, lineHeight:1.7 }}>
+                    বর্তমানে বিশেষ দিন: <strong style={{color:C.accent}}>{DAYS_BN[specialWeekday]}বার</strong> · বিশেষ দিনে দুপুর = {SPECIAL_LUNCH} ইউনিট
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {settingsTab==="meal" && (
+              <div>
+                <div style={card()}>
+                  <div style={{ fontSize:13, fontWeight:700, color: C.primary, marginBottom:12 }}>🍽️ মিল রেট সেটিং</div>
+                  <div style={{ marginBottom:12 }}>
+                    <div style={{ fontSize:11, color: C.muted, marginBottom:4 }}>মিল রেট (৳ প্রতি ইউনিট)</div>
+                    <input type="number" value={rateInput} onChange={e=>setRateInput(parseFloat(e.target.value)||0)} style={inp()} />
+                  </div>
+                  <button onClick={saveRate} style={{ ...btn(C.primary), width:"100%" }}>✓ সেভ করুন</button>
+                  <div style={{ marginTop:12, padding:10, background: C.surface, borderRadius:8, fontSize:12, color: C.muted }}>
+                    সকাল = 0.5, দুপুর = 1.0, রাত = 1.0 ইউনিট<br/>
+                    বিশেষ দিনে দুপুর = {SPECIAL_LUNCH} ইউনিট
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {settingsTab==="members_s" && (
+              <div>
+                <div style={card()}>
+                  <div style={{ fontSize:13, fontWeight:700, color: C.primary, marginBottom:12 }}>👥 সদস্য ব্যবস্থাপনা</div>
+                  <div style={{ fontSize:12, color: C.muted, marginBottom:8 }}>মোট সদস্য: {members.length} জন</div>
+                  {members.map(m=>(
+                    <div key={m.id} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:`1px solid ${C.border}`, fontSize:13 }}>
+                      <span>{m.name} <span style={{color:C.muted,fontSize:11}}>(রুম {m.room})</span></span>
+                      <span style={{color:C.primary}}>৳{m.deposit} জমা</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ══ TELEGRAM SETTINGS ══ */}
+            {settingsTab==="telegram" && (
+              <div>
+                <div style={card({ border:`1px solid ${C.secondary}33` })}>
+                  <div style={{ fontSize:13, fontWeight:700, color: C.secondary, marginBottom:6 }}>📱 Telegram Bot সেটআপ</div>
+                  <div style={{ fontSize:12, color: C.muted, marginBottom:14, lineHeight:1.7, background: C.surface, padding:12, borderRadius:8 }}>
+                    <strong style={{color:C.text}}>কীভাবে সেটআপ করবেন:</strong><br/>
+                    ১. Telegram-এ <strong style={{color:C.secondary}}>@BotFather</strong> এ যান → /newbot → Bot তৈরি করুন<br/>
+                    ২. BotFather আপনাকে একটি <strong style={{color:C.primary}}>Bot Token</strong> দেবে (যেমন: 123456:ABC-DEF...)<br/>
+                    ৩. Bot-টিকে একটি গ্রুপে বা সরাসরি মেসেজ করুন<br/>
+                    ৪. <strong style={{color:C.secondary}}>@userinfobot</strong> বা <strong style={{color:C.secondary}}>@getidsbot</strong> থেকে আপনার <strong style={{color:C.primary}}>Chat ID</strong> নিন<br/>
+                    ৫. নিচে Token ও Chat ID দিয়ে সেভ করুন ✓
+                  </div>
+
+                  <div style={{ marginBottom:12 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
+                      <div style={{ fontSize:11, color: C.muted }}>🔑 Bot Token</div>
+                      <button onClick={()=>setShowTgKeys(!showTgKeys)} style={{ background:"none", border:"none", color: C.muted, cursor:"pointer", fontSize:11 }}>{showTgKeys?"🙈 লুকান":"👁️ দেখুন"}</button>
+                    </div>
+                    <input
+                      type={showTgKeys?"text":"password"}
+                      value={telegramBotToken}
+                      onChange={e=>setTelegramBotToken(e.target.value)}
+                      placeholder="123456789:AABBccDDee..."
+                      style={inp()}
+                    />
+                    <div style={{ fontSize:10, color: C.muted, marginTop:4 }}>👉 @BotFather থেকে পান</div>
+                  </div>
+
+                  <div style={{ marginBottom:14 }}>
+                    <div style={{ fontSize:11, color: C.muted, marginBottom:4 }}>💬 Chat ID</div>
+                    <input
+                      type="text"
+                      value={telegramChatId}
+                      onChange={e=>setTelegramChatId(e.target.value)}
+                      placeholder="-1001234567890 বা 987654321"
+                      style={inp()}
+                    />
+                    <div style={{ fontSize:10, color: C.muted, marginTop:4 }}>👉 @userinfobot থেকে পান (গ্রুপে গেলে − চিহ্ন থাকে)</div>
+                  </div>
+
+                  {telegramBotToken && telegramChatId ? (
+                    <div style={{ fontSize:12, color: C.success, padding:"10px 14px", background:`${C.success}18`, borderRadius:8, marginBottom:12 }}>
+                      ✅ Telegram Bot সংযুক্ত — রশিদ আপলোড হলে ডেট-সহ স্বয়ংক্রিয়ভাবে পাঠানো হবে
+                    </div>
+                  ) : (
+                    <div style={{ fontSize:12, color: C.muted, padding:"10px 14px", background: C.surface, borderRadius:8, marginBottom:12 }}>
+                      ⚪ Token ও Chat ID দিন — তারপর রশিদ ট্যাবে গিয়ে ছবি আপলোড করুন
+                    </div>
+                  )}
+
+                  <div style={{ fontSize:11, color: C.muted, lineHeight:1.7 }}>
+                    ⚠️ <strong style={{color:C.warn}}>নিরাপত্তা সতর্কতা:</strong> Bot Token কাউকে শেয়ার করবেন না। এটি আপনার Bot-এর পাসওয়ার্ড।
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ══ AI SETTINGS ══ */}
+            {settingsTab==="data" && (
+              <div>
+                <div style={card({ border:`1px solid ${C.primary}33` })}>
+                  <div style={{ fontSize:13, fontWeight:700, color: C.primary, marginBottom:6 }}>💾 ডেটা ব্যাকআপ</div>
+                  <div style={{ fontSize:12, color: C.muted, marginBottom:14, lineHeight:1.7 }}>
+                    আপনার সব হিসাব, সদস্য, ইনভেন্টরি ডেটা JSON ফাইলে সেভ করুন। ফোন বদলালে বা ডেটা হারালে রিস্টোর করতে পারবেন।
+                  </div>
+                  <button onClick={() => {
+                    const state = {
+                      members, dailyRecords, groceries, mealRate, specialWeekday,
+                      specialDistrib, inventory, receipts, guestMeals,
+                      exportDate: new Date().toISOString()
+                    };
+                    const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
+                    const a = document.createElement("a");
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `meal-manager-backup-${new Date().toISOString().split("T")[0]}.json`;
+                    a.click();
+                    notify("✅ ব্যাকআপ ডাউনলোড হয়েছে!");
+                  }} style={{ ...btn(C.primary), width:"100%", marginBottom:10 }}>
+                    📥 ব্যাকআপ ডাউনলোড করুন (.json)
+                  </button>
+                </div>
+
+                <div style={card({ border:`1px solid ${C.accent}33` })}>
+                  <div style={{ fontSize:13, fontWeight:700, color: C.accent, marginBottom:6 }}>📤 ডেটা রিস্টোর</div>
+                  <div style={{ fontSize:12, color: C.muted, marginBottom:14, lineHeight:1.7 }}>
+                    আগে সেভ করা JSON ফাইল আপলোড করুন। ⚠️ বর্তমান ডেটা মুছে যাবে।
+                  </div>
+                  <input type="file" accept=".json" style={{ display:"none" }} id="restoreInput" onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                      try {
+                        const data = JSON.parse(ev.target.result);
+                        if (!window.confirm("বর্তমান সব ডেটা মুছে রিস্টোর করবেন?")) return;
+                        if (data.members) setMembers(data.members);
+                        if (data.dailyRecords) setDailyRecords(data.dailyRecords);
+                        if (data.groceries) setGroceries(data.groceries);
+                        if (data.mealRate !== undefined) setMealRate(data.mealRate);
+                        if (data.specialWeekday !== undefined) setSpecialWeekday(data.specialWeekday);
+                        if (data.specialDistrib) setSpecialDistrib(data.specialDistrib);
+                        if (data.inventory) setInventory(data.inventory);
+                        if (data.receipts) setReceipts(data.receipts);
+                        if (data.guestMeals) setGuestMeals(data.guestMeals);
+                        notify("✅ ডেটা রিস্টোর সম্পন্ন!");
+                      } catch { notify("⚠️ ফাইল পড়তে সমস্যা!", "error"); }
+                    };
+                    reader.readAsText(file);
+                    e.target.value = "";
+                  }} />
+                  <button onClick={() => document.getElementById("restoreInput").click()} style={{ ...btn(C.accent), width:"100%", marginBottom:10 }}>
+                    📂 ব্যাকআপ ফাইল বাছুন
+                  </button>
+                </div>
+
+                <div style={card({ border:`1px solid ${C.danger}33` })}>
+                  <div style={{ fontSize:13, fontWeight:700, color: C.danger, marginBottom:6 }}>🗑️ সব ডেটা মুছুন</div>
+                  <div style={{ fontSize:12, color: C.muted, marginBottom:14 }}>
+                    সতর্কতা: এই অ্যাপের সব ডেটা স্থায়ীভাবে মুছে যাবে।
+                  </div>
+                  <button onClick={() => {
+                    if (!window.confirm("সত্যিই সব ডেটা মুছবেন? এটি ফেরানো যাবে না।")) return;
+                    localStorage.removeItem("meal_manager_pro_v3");
+                    window.location.reload();
+                  }} style={{ ...btn(C.danger, {color:"#fff"}), width:"100%" }}>
+                    ⚠️ সব ডেটা মুছুন ও রিসেট করুন
+                  </button>
+                </div>
+
+                <div style={card()}>
+                  <div style={{ fontSize:12, fontWeight:700, color: C.muted, marginBottom:8 }}>📱 অ্যাপ ইনস্টল করুন</div>
+                  <div style={{ fontSize:12, color: C.muted, lineHeight:1.8 }}>
+                    <strong style={{color:C.text}}>Android (Chrome):</strong><br/>
+                    ব্রাউজারের মেনু → "Add to Home screen" বা "হোম স্ক্রিনে যোগ করুন"<br/><br/>
+                    <strong style={{color:C.text}}>iPhone (Safari):</strong><br/>
+                    Share বাটন → "Add to Home Screen" → Add<br/><br/>
+                    <span style={{color:C.success}}>✅ ইনস্টল করলে ইন্টারনেট ছাড়াও চলবে!</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {settingsTab==="ai" && (
+              <div>
+                {/* AI provider explainer */}
+                <div style={{ background:`${C.secondary}12`, border:`1px solid ${C.secondary}33`, borderRadius:12, padding:14, marginBottom:14 }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:C.secondary, marginBottom:6 }}>💡 AI কীভাবে কাজ করে?</div>
+                  <div style={{ fontSize:11, color:C.muted, lineHeight:1.8 }}>
+                    আপনার চ্যাটবট ৩টি AI-এর যেকোনো একটি ব্যবহার করতে পারে:<br/>
+                    • <strong style={{color:C.primary}}>Claude</strong> — ডিফল্ট, কোনো key লাগবে না, সর্বোচ্চ নির্ভুলতা<br/>
+                    • <strong style={{color:"#a78bfa"}}>Gemini</strong> — Google-এর AI, বিনামূল্যে key পাওয়া যায়<br/>
+                    • <strong style={{color:C.success}}>ChatGPT</strong> — OpenAI-এর AI, পেইড key দরকার<br/>
+                    <span style={{color:C.warn}}>⚠️ Key শুধু আপনার ব্রাউজারে থাকে, কোথাও পাঠানো হয় না।</span>
+                  </div>
+                </div>
+
+                <div style={card()}>
+                  <div style={{ fontSize:13, fontWeight:700, color: C.primary, marginBottom:12 }}>🤖 AI প্রদানকারী নির্বাচন</div>
+                  <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                    {[
+                      ["claude","🤖 Claude (Anthropic)","ডিফল্ট — কোনো key লাগবে না",C.primary,"always free"],
+                      ["gemini","✨ Gemini (Google)","বিনামূল্যে key পাওয়া যায়","#a78bfa","free tier"],
+                      ["openai","💬 ChatGPT (OpenAI)","পেইড key দরকার",C.success,"paid"],
+                    ].map(([val,label,desc,color,badge])=>(
+                      <button key={val} onClick={()=>setAiProvider(val)} style={{
+                        padding:"12px 14px", borderRadius:12, border:`2px solid ${aiProvider===val?color:C.border}`,
+                        background:aiProvider===val?`${color}18`:C.surface, cursor:"pointer", fontFamily:"inherit",
+                        display:"flex", alignItems:"center", gap:10, textAlign:"left"
+                      }}>
+                        <div style={{ fontSize:20 }}>{label.split(" ")[0]}</div>
+                        <div style={{ flex:1 }}>
+                          <div style={{ fontSize:13, fontWeight:700, color:aiProvider===val?color:C.text }}>{label.slice(label.indexOf(" ")+1)}</div>
+                          <div style={{ fontSize:11, color:C.muted }}>{desc}</div>
+                        </div>
+                        <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4 }}>
+                          {aiProvider===val && <div style={{ fontSize:10, fontWeight:700, color:color, background:`${color}22`, padding:"2px 8px", borderRadius:10 }}>✓ সক্রিয়</div>}
+                          <div style={{ fontSize:9, color:C.muted, background:C.surface, padding:"2px 6px", borderRadius:6, border:`1px solid ${C.border}` }}>{badge}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={card()}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+                    <div style={{ fontSize:13, fontWeight:700, color: C.primary }}>🔑 API Keys</div>
+                    <button onClick={()=>setShowKeys(!showKeys)} style={{ background:"none", border:"none", color: C.muted, cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>{showKeys?"🙈 লুকান":"👁️ দেখুন"}</button>
+                  </div>
+
+                  {/* Gemini Key */}
+                  <div style={{ marginBottom:16, padding:14, background:C.surface, borderRadius:12, border:`1px solid ${"#a78bfa"}33` }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:"#a78bfa" }}>✨ Gemini API Key</div>
+                      {aiTestStatus.gemini && (
+                        <div style={{ fontSize:11, fontWeight:700, color:aiTestStatus.gemini==="ok"?C.success:aiTestStatus.gemini==="testing"?C.accent:C.danger,
+                          background:aiTestStatus.gemini==="ok"?`${C.success}22`:aiTestStatus.gemini==="testing"?`${C.accent}22`:`${C.danger}22`,
+                          padding:"2px 10px", borderRadius:10 }}>
+                          {aiTestStatus.gemini==="testing"?"⏳ পরীক্ষা হচ্ছে...":aiTestMsg.gemini}
+                        </div>
+                      )}
+                    </div>
+                    <input type={showKeys?"text":"password"} value={geminiKey} onChange={e=>{ setGeminiKey(e.target.value); setAiTestStatus(p=>({...p,gemini:null})); }} placeholder="AIza..." style={{...inp(), marginBottom:8}} />
+                    <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                      <button onClick={()=>testAiConnection("gemini")} disabled={!geminiKey||aiTestStatus.gemini==="testing"} style={{
+                        background:geminiKey?`${"#a78bfa"}22`:`${C.border}`, border:`1px solid ${"#a78bfa"}44`, borderRadius:8, padding:"7px 14px",
+                        color:geminiKey?"#a78bfa":C.muted, cursor:geminiKey?"pointer":"not-allowed", fontSize:12, fontFamily:"inherit", fontWeight:700
+                      }}>🔌 সংযোগ পরীক্ষা</button>
+                      <div style={{ fontSize:10, color: C.muted }}>👉 <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" style={{color:"#a78bfa"}}>aistudio.google.com/apikey</a> থেকে নিন (বিনামূল্যে)</div>
+                    </div>
+                  </div>
+
+                  {/* OpenAI Key */}
+                  <div style={{ marginBottom:12, padding:14, background:C.surface, borderRadius:12, border:`1px solid ${C.success}33` }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:C.success }}>💬 ChatGPT (OpenAI) API Key</div>
+                      {aiTestStatus.openai && (
+                        <div style={{ fontSize:11, fontWeight:700, color:aiTestStatus.openai==="ok"?C.success:aiTestStatus.openai==="testing"?C.accent:C.danger,
+                          background:aiTestStatus.openai==="ok"?`${C.success}22`:aiTestStatus.openai==="testing"?`${C.accent}22`:`${C.danger}22`,
+                          padding:"2px 10px", borderRadius:10 }}>
+                          {aiTestStatus.openai==="testing"?"⏳ পরীক্ষা হচ্ছে...":aiTestMsg.openai}
+                        </div>
+                      )}
+                    </div>
+                    <input type={showKeys?"text":"password"} value={openaiKey} onChange={e=>{ setOpenaiKey(e.target.value); setAiTestStatus(p=>({...p,openai:null})); }} placeholder="sk-..." style={{...inp(), marginBottom:8}} />
+                    <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                      <button onClick={()=>testAiConnection("openai")} disabled={!openaiKey||aiTestStatus.openai==="testing"} style={{
+                        background:openaiKey?`${C.success}22`:`${C.border}`, border:`1px solid ${C.success}44`, borderRadius:8, padding:"7px 14px",
+                        color:openaiKey?C.success:C.muted, cursor:openaiKey?"pointer":"not-allowed", fontSize:12, fontFamily:"inherit", fontWeight:700
+                      }}>🔌 সংযোগ পরীক্ষা</button>
+                      <div style={{ fontSize:10, color: C.muted }}>👉 <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer" style={{color:C.success}}>platform.openai.com</a> থেকে নিন</div>
+                    </div>
+                  </div>
+
+                  <div style={{ fontSize:11, color: C.success, padding:"8px 12px", background:`${C.success}18`, borderRadius:8 }}>
+                    ✅ Claude ব্যবহার করলে কোনো API key লাগবে না — এটিই সবচেয়ে সহজ ও নির্ভরযোগ্য
+                  </div>
+                </div>
+
+                {/* AI capability comparison */}
+                <div style={card({ border:`1px solid ${C.border}` })}>
+                  <div style={{ fontSize:12, fontWeight:700, color:C.muted, marginBottom:10 }}>📊 AI তুলনা</div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:6, fontSize:11 }}>
+                    {[["","Claude","Gemini","ChatGPT"],["নির্ভুলতা","⭐⭐⭐","⭐⭐","⭐⭐⭐"],["বাংলা","⭐⭐⭐","⭐⭐","⭐⭐"],["খরচ","বিনামূল্যে","বিনামূল্যে","পেইড"],["গতি","দ্রুত","দ্রুত","মাঝারি"]].map((row,i)=>(
+                      i===0 ? (
+                        <div key={i} style={{ display:"contents" }}>
+                          {row.slice(1).map((h,j)=>(
+                            <div key={j} style={{ background:`${[C.primary,"#a78bfa",C.success][j]}22`, border:`1px solid ${[C.primary,"#a78bfa",C.success][j]}44`, borderRadius:8, padding:"6px", textAlign:"center", fontWeight:700, color:[C.primary,"#a78bfa",C.success][j], fontSize:11 }}>{h}</div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div key={i} style={{ display:"contents" }}>
+                          {row.slice(1).map((v,j)=>(
+                            <div key={j} style={{ background:C.surface, borderRadius:6, padding:"5px", textAlign:"center", color:C.muted }}>
+                              <div style={{ fontSize:9, color:C.textDim }}>{row[0]}</div>
+                              <div style={{ fontSize:12 }}>{v}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════ CHATBOT FAB ══════════════ */}
+      <button onClick={()=>setChatOpen(o=>!o)} style={{
+        position:"fixed", bottom:22, right:18, width:60, height:60, borderRadius:"50%", border:"none",
+        background: chatOpen ? C.danger : `linear-gradient(135deg, ${C.primary}, ${C.secondary})`,
+        color: chatOpen ? "#fff" : "#050d0f", fontSize:24, cursor:"pointer",
+        boxShadow:`0 4px 28px ${chatOpen?"#ef444466":C.glow}`,
+        zIndex:1000, transition:"all .2s", display:"flex", alignItems:"center", justifyContent:"center",
+      }}>{chatOpen?"✕":"🤖"}</button>
+
+      {/* ══════════════ CHATBOT PANEL ══════════════ */}
+      {chatOpen && (
+        <div style={{
+          position:"fixed", bottom:94, right:12,
+          width: Math.min(410, typeof window!=="undefined" ? window.innerWidth-24 : 386),
+          height:560, background: C.card, borderRadius:18, border:`1px solid ${C.borderHi}`,
+          boxShadow:`0 12px 56px #000e`, zIndex:999, display:"flex", flexDirection:"column", overflow:"hidden",
+        }}>
+          {/* Chat Header */}
+          <div style={{ padding:"12px 16px", background:`linear-gradient(135deg,${C.surface},${C.card})`, borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ fontSize:22 }}>🤖</div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:13, fontWeight:700, color: C.primary }}>AI সহকারী</div>
+              <div style={{ fontSize:10, color: C.muted }}>
+                {aiProvider==="gemini"?"✨ Gemini":aiProvider==="openai"?"💬 ChatGPT":"🤖 Claude"} · সব ভাষায় বলুন
+              </div>
+            </div>
+            <button onClick={()=>setShowChatGuide(p=>!p)} style={{ background:`${C.accent}22`, border:`1px solid ${C.accent}44`, borderRadius:8, padding:"4px 10px", color:C.accent, cursor:"pointer", fontSize:11, fontFamily:"inherit" }}>
+              {showChatGuide ? "✕" : "❓ গাইড"}
+            </button>
+          </div>
+
+          {/* Usage Guide */}
+          {showChatGuide && (
+            <div style={{ padding:"10px 14px", background:`${C.surface}`, borderBottom:`1px solid ${C.border}`, fontSize:11, color: C.muted, lineHeight:1.8 }}>
+              <div style={{ fontWeight:700, color: C.primary, marginBottom:4 }}>📖 ব্যবহার বিধি</div>
+              <div>• "তেল ৫ লিটার কিনলাম" → ইনভেন্টরি আপডেট</div>
+              <div>• "কার কত বকেয়া?" → হিসাব দেখুন</div>
+              <div>• "মিল রেট কত হওয়া উচিত?" → বিশ্লেষণ</div>
+              <div>• "সবার হিসাব দাও" → সম্পূর্ণ রিপোর্ট</div>
+              <div style={{ color: C.warn, marginTop:6 }}>
+                ⚠️ <strong>সতর্কতা:</strong> AI উত্তর ভুল হতে পারে। গুরুত্বপূর্ণ আর্থিক সিদ্ধান্ত নিজে যাচাই করুন। ইনভেন্টরি AI আপডেট করলেও চেক করুন।
+              </div>
+            </div>
+          )}
+
+          {/* Messages */}
+          <div style={{ flex:1, overflowY:"auto", padding:"12px 14px", display:"flex", flexDirection:"column", gap:10 }}>
+            {chatMessages.map((msg,i)=>(
+              <div key={i} style={{ display:"flex", justifyContent:msg.role==="user"?"flex-end":"flex-start" }}>
+                <div style={{
+                  maxWidth:"88%", padding:"10px 14px",
+                  borderRadius:msg.role==="user"?"14px 14px 4px 14px":"14px 14px 14px 4px",
+                  background:msg.role==="user"?`linear-gradient(135deg,${C.primary},${C.secondary})`:C.surface,
+                  color:msg.role==="user"?"#050d0f":C.text,
+                  fontSize:13, lineHeight:1.65, border:msg.role==="assistant"?`1px solid ${C.border}`:"none",
+                  whiteSpace:"pre-wrap",
+                }}>{msg.text}</div>
+              </div>
+            ))}
+            {chatLoading && (
+              <div style={{ display:"flex", justifyContent:"flex-start" }}>
+                <div style={{ background: C.surface, border:`1px solid ${C.border}`, borderRadius:"14px 14px 14px 4px", padding:"10px 16px", fontSize:13, color: C.muted }}>⏳ ভাবছি...</div>
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* Suggestion Prompts */}
+          <div style={{ padding:"6px 10px 4px", display:"flex", gap:5, overflowX:"auto", borderTop:`1px solid ${C.border}` }}>
+            {CHAT_SUGGESTIONS.map(q=>(
+              <button key={q} onClick={()=>setChatInput(q)} style={{
+                background: C.surface, border:`1px solid ${C.border}`, borderRadius:20,
+                padding:"4px 11px", color: C.muted, cursor:"pointer", fontSize:11,
+                fontFamily:"inherit", whiteSpace:"nowrap", transition:"border-color .15s"
+              }}>{q}</button>
+            ))}
+          </div>
+
+          {/* Input */}
+          <div style={{ padding:"10px 12px", borderTop:`1px solid ${C.border}`, display:"flex", gap:8 }}>
+            <input value={chatInput} onChange={e=>setChatInput(e.target.value)}
+              onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendChat()}
+              placeholder="যেকোনো ভাষায় লিখুন..." disabled={chatLoading}
+              style={{ flex:1, background: C.surface, border:`1px solid ${C.border}`, color: C.text, borderRadius:10, padding:"9px 14px", fontSize:13, fontFamily:"inherit" }} />
+            <button onClick={sendChat} disabled={chatLoading||!chatInput.trim()} style={{
+              background: chatLoading||!chatInput.trim() ? C.border : `linear-gradient(135deg,${C.primary},${C.secondary})`,
+              border:"none", borderRadius:10, padding:"9px 14px",
+              color: chatLoading||!chatInput.trim() ? C.muted : "#050d0f",
+              cursor: chatLoading ? "not-allowed" : "pointer", fontSize:18, fontWeight:700,
+            }}>➤</button>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes slideIn{from{transform:translateX(60px) translateY(-50%);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+        input:focus, select:focus{outline:none;border-color:${C.primary}!important;box-shadow:0 0 0 2px ${C.glow};}
+        button:active{transform:scale(0.97);}
+        ::-webkit-scrollbar{width:4px;height:4px;}
+        ::-webkit-scrollbar-track{background:${C.bg};}
+        ::-webkit-scrollbar-thumb{background:${C.border};border-radius:2px;}
+        ::-webkit-scrollbar-thumb:hover{background:${C.borderHi};}
+        select option{background:${C.surface};color:${C.text};}
+      `}</style>
+    </div>
+  );
+}
+
+
+    // ══ localStorage persistence ══
+    const STORAGE_KEY = "meal_manager_pro_v3";
+
+    function AppWithStorage() {
+      const [loaded, setLoaded] = React.useState(false);
+      const [savedState, setSavedState] = React.useState(null);
+
+      React.useEffect(() => {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) setSavedState(JSON.parse(raw));
+        } catch(e) {}
+        setLoaded(true);
+      }, []);
+
+      if (!loaded) return (
+        <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:"#060d0f",color:"#00c9a7",fontFamily:"Hind Siliguri",flexDirection:"column",gap:16}}>
+          <div style={{fontSize:40}}>🏠</div>
+          <div style={{fontSize:18,fontWeight:700}}>মিল ম্যানেজার Pro</div>
+          <div style={{fontSize:13,color:"#4a6572"}}>লোড হচ্ছে...</div>
+        </div>
+      );
+
+      return <MealManagerPro initialSavedState={savedState} onSave={(state) => {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+      }} />;
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<AppWithStorage />);
+  </script>
+
+  <!-- Service Worker for offline PWA -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      const swCode = `
+        const CACHE = "meal-mgr-v3";
+        const START_URL = "/Meal-Manager-v2/meal-manager-pwa.html";
+        self.addEventListener("install", e => {
+          self.skipWaiting();
+          e.waitUntil(caches.open(CACHE).then(c => c.addAll([START_URL])));
+        });
+        self.addEventListener("activate", e => {
+          e.waitUntil(clients.claim());
+        });
+        self.addEventListener("fetch", e => {
+          e.respondWith(
+            fetch(e.request).catch(() => caches.match(e.request) || caches.match(START_URL))
+          );
+        });
+      `;
+      const blob = new Blob([swCode], { type: "application/javascript" });
+      const swUrl = URL.createObjectURL(blob);
+      navigator.serviceWorker.register(swUrl).catch(() => {});
+    }
+  </script>
+</body>
+</html>
