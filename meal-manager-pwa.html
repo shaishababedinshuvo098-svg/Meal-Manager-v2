@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <meta name="theme-color" content="#060d0f"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="মিল ম্যানেজার"/>
+  <title>🏠 মিল ম্যানেজার Pro</title>
+  <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjogIuCmruCmv+CmsiDgpq7gp43gpq/gpr7gpqjgp4fgppzgpr7gprAgUHJvIiwgInNob3J0X25hbWUiOiAi4Kau4Ka/4KayIOCmruCnjeCmr+CmvuCmqOCnh+CmnOCmvuCmsCIsICJzdGFydF91cmwiOiAiLiIsICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLCAib3JpZW50YXRpb24iOiAicG9ydHJhaXQiLCAiYmFja2dyb3VuZF9jb2xvciI6ICIjMDYwZDBmIiwgInRoZW1lX2NvbG9yIjogIiMwMGM5YTciLCAibGFuZyI6ICJibiIsICJpY29ucyI6IFt7InNyYyI6ICJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUI0Yld4dWN6MGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TUM5emRtY2lJSFpwWlhkQ2IzZzlJakFnTUNBeE9USWdNVGt5SWo0OGNtVmpkQ0IzYVdSMGFEMGlNVGt5SWlCb1pXbG5hSFE5SWpFNU1pSWdjbmc5SWpNeUlpQm1hV3hzUFNJak1EQmpPV0UzSWk4K1BIUmxlSFFnZVQwaU1UTXdJaUI0UFNJek1DSWdabTl1ZEMxemFYcGxQU0l4TWpBaUlHWnZiblF0Wm1GdGFXeDVQU0p6WlhKcFppSWcrSit2b0R3dmRHVjRkRDQ4TDNOMlp6ND0iLCAic2l6ZXMiOiAiMTkyeDE5MiIsICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiLCAicHVycG9zZSI6ICJhbnkgbWFza2FibGUifV19"/>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html,body{height:100%;background:#060d0f;}
+    #root{min-height:100vh;}
+    body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useMemo,useRef,useCallback}=React;
+
+// ══ CONSTANTS ══
+const DAYS_BN=["রবি","সোম","মঙ্গল","বুধ","বৃহঃ","শুক্র","শনি"];
+const MONTHS_BN=["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
+const MEAL_RATES={morning:0.5,lunch:1,dinner:1};
+const SPECIAL_LUNCH=2.5;
+const OWNER="Shaishab Abedin";
+const RATE_MIN=36,RATE_MAX=39;
+// Pre-filled API credentials
+const DEFAULT_GEMINI_KEY="AIzaSyCVOCwgB8Te_STCs1HXgEJMU9A_m-pLEBI";
+const DEFAULT_OPENAI_KEY="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";
+const DEFAULT_TG_TOKEN="8497908603:AAG4G3zWtSkYlhhzfxl03C1eS_sDSF_sj8U";
+
+const C={
+  bg:"#060d0f",surface:"#0c1a1f",card:"#112028",border:"#1a3540",borderHi:"#24505f",
+  primary:"#00c9a7",secondary:"#0ea5e9",accent:"#f59e0b",danger:"#ef4444",
+  success:"#10b981",warn:"#f59e0b",muted:"#4a6572",text:"#d4e8ee",textDim:"#5e8494",
+  glow:"rgba(0,201,167,0.18)",
+};
+
+const getTodayKey=()=>new Date().toISOString().split("T")[0];
+const getMonthDates=(y,m)=>{const dates=[],days=new Date(y,m+1,0).getDate();for(let d=1;d<=days;d++)dates.push(`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`);return dates;};
+const fmtDate=(d)=>{const dt=new Date(d+"T00:00:00");return`${dt.getDate()} ${MONTHS_BN[dt.getMonth()]}`;};
+const genId=()=>Date.now()+Math.random();
+
+const mkMember=(i)=>({id:i+1,name:`সদস্য ${i+1}`,room:`${i+1}`,activeMeals:{morning:true,lunch:true,dinner:true},deposit:0,depositHistory:[],dueAmount:0,dueHistory:[]});
+const initialMembers=Array.from({length:40},(_,i)=>mkMember(i));
+
+const DEFAULT_INV=[
+  {id:1,name:"তেল (সয়াবিন)",unit:"লিটার",quantity:0,minAlert:2},
+  {id:2,name:"লবণ",unit:"কেজি",quantity:0,minAlert:0.5},
+  {id:3,name:"চাল",unit:"কেজি",quantity:0,minAlert:5},
+  {id:4,name:"ডাল",unit:"কেজি",quantity:0,minAlert:1},
+  {id:5,name:"পেঁয়াজ",unit:"কেজি",quantity:0,minAlert:2},
+  {id:6,name:"রসুন",unit:"কেজি",quantity:0,minAlert:0.5},
+  {id:7,name:"আদা",unit:"কেজি",quantity:0,minAlert:0.2},
+  {id:8,name:"হলুদ গুঁড়া",unit:"গ্রাম",quantity:0,minAlert:100},
+  {id:9,name:"মরিচ গুঁড়া",unit:"গ্রাম",quantity:0,minAlert:100},
+  {id:10,name:"গ্যাস (সিলিন্ডার)",unit:"পিস",quantity:0,minAlert:1},
+];
+
+// ─── Convert base64 data URL to Blob (for Telegram fix) ───
+const dataURLtoBlob=(dataURL)=>{
+  const arr=dataURL.split(",");
+  const mime=arr[0].match(/:(.*?);/)[1];
+  const bstr=atob(arr[1]);
+  let n=bstr.length;
+  const u8=new Uint8Array(n);
+  while(n--)u8[n]=bstr.charCodeAt(n);
+  return new Blob([u8],{type:mime});
+};
+
+// ══ MAIN COMPONENT ══
+function MealManagerPro({initialSavedState,onSave}){
+  const ls=(key,def)=>{try{return initialSavedState?.[key]??def;}catch{return def;}};
+
+  // ─ Core state ─
+  const[tab,setTab]=useState("dashboard");
+  const[members,setMembers]=useState(()=>ls("members",initialMembers));
+  const[dailyRecords,setDailyRecords]=useState(()=>ls("dailyRecords",{}));
+  const[groceries,setGroceries]=useState(()=>ls("groceries",{}));
+  const[mealRate,setMealRate]=useState(()=>ls("mealRate",0));
+  const[selectedDate,setSelectedDate]=useState(getTodayKey());
+  const[specialWeekday,setSpecialWeekday]=useState(()=>ls("specialWeekday",5));
+  const[specialDistrib,setSpecialDistrib]=useState(()=>ls("specialDistrib",{}));
+  const[guestMeals,setGuestMeals]=useState(()=>ls("guestMeals",{}));
+
+  // ─ Cash control ─
+  const[cashAdjustment,setCashAdjustment]=useState(()=>ls("cashAdjustment",0));
+  const[cashAdjInput,setCashAdjInput]=useState("");
+  const[prevManagerAmount,setPrevManagerAmount]=useState(()=>ls("prevManagerAmount",0));
+  const[prevManagerNote,setPrevManagerNote]=useState(()=>ls("prevManagerNote",""));
+  const[prevMgrInput,setPrevMgrInput]=useState("");
+  const[prevMgrNoteInput,setPrevMgrNoteInput]=useState("");
+
+  // ─ Grocery ─
+  const[grocItem,setGrocItem]=useState("");
+  const[grocAmt,setGrocAmt]=useState("");
+  const[grocDate,setGrocDate]=useState(getTodayKey());
+
+  // ─ Inventory ─
+  const[inventory,setInventory]=useState(()=>ls("inventory",DEFAULT_INV));
+  const[invName,setInvName]=useState("");
+  const[invUnit,setInvUnit]=useState("");
+  const[invQty,setInvQty]=useState("");
+  const[invMin,setInvMin]=useState("");
+  const[invAdjId,setInvAdjId]=useState(null);
+  const[invAdjAmt,setInvAdjAmt]=useState("");
+  const[invAdjType,setInvAdjType]=useState("set"); // set | add | remove
+  const[showAddInvForm,setShowAddInvForm]=useState(false);
+
+  // ─ Receipts ─
+  const[receipts,setReceipts]=useState(()=>ls("receipts",[]));
+  const[receiptDate,setReceiptDate]=useState(getTodayKey());
+  const[receiptNote,setReceiptNote]=useState("");
+  const[viewReceipt,setViewReceipt]=useState(null);
+  const receiptInputRef=useRef(null);
+
+  // ─ Telegram ─
+  const[tgToken,setTgToken]=useState(()=>ls("tgToken",DEFAULT_TG_TOKEN));
+  const[tgChatId,setTgChatId]=useState(()=>ls("tgChatId",""));
+  const[tgSending,setTgSending]=useState(false);
+  const[showTgKeys,setShowTgKeys]=useState(false);
+
+  // ─ Special day distribution ─
+  const[sdRoom,setSdRoom]=useState("");
+  const[sdCount,setSdCount]=useState("");
+  const[sdCollector,setSdCollector]=useState("");
+  const[sdDate,setSdDate]=useState(getTodayKey());
+
+  // ─ Market Day ─
+  const[marketDays,setMarketDays]=useState(()=>ls("marketDays",{}));
+  const[marketDayDate,setMarketDayDate]=useState(getTodayKey());
+  const[marketNote,setMarketNote]=useState("");
+  const[marketNoteInput,setMarketNoteInput]=useState("");
+
+  // ─ Cooking Log ─
+  const[cookingLog,setCookingLog]=useState(()=>ls("cookingLog",{}));
+  const[cookDate,setCookDate]=useState(getTodayKey());
+  const[cookItem,setCookItem]=useState("");
+  const[cookNote,setCookNote]=useState("");
+
+  // ─ Member inputs ─
+  const[editingMember,setEditingMember]=useState(null);
+  const[depositInput,setDepositInput]=useState({});
+  const[dueInput,setDueInput]=useState({});
+  const[newMemberName,setNewMemberName]=useState("");
+  const[newMemberRoom,setNewMemberRoom]=useState("");
+  const[rateInput,setRateInput]=useState(()=>ls("rateInput",0));
+
+  // ─ AI / Chat ─
+  const[chatOpen,setChatOpen]=useState(false);
+  const[chatMessages,setChatMessages]=useState([{role:"assistant",text:`আস্সালামু আলাইকুম! আমি ${OWNER}-এর মিল ম্যানেজার AI। 🤖\n\n✅ Gemini AI সংযুক্ত — সরাসরি কথা বলুন!\n\n• "তেল ৫ লিটার কিনলাম" → ইনভেন্টরি আপডেট\n• "কার কত বকেয়া?"\n• "হাতে কত টাকা?"\n• "সবার হিসাব দাও"\n• "মিল রেট কত হওয়া উচিত?"\n\nযেকোনো ভাষায় লিখুন ✓\n\n⚠️ সমস্যা হলে সেটিং → 🤖 AI → Gemini নির্বাচন করুন`}]);
+  const[chatInput,setChatInput]=useState("");
+  const[chatLoading,setChatLoading]=useState(false);
+
+  // ─ Settings ─
+  const[settingsTab,setSettingsTab]=useState("general");
+  const[aiProvider,setAiProvider]=useState(()=>ls("aiProvider","gemini"));
+  const[geminiKey,setGeminiKey]=useState(()=>ls("geminiKey",DEFAULT_GEMINI_KEY));
+  const[openaiKey,setOpenaiKey]=useState(()=>ls("openaiKey",DEFAULT_OPENAI_KEY));
+  const[showKeys,setShowKeys]=useState(false);
+
+  // ─ Notification ─
+  const[notification,setNotification]=useState(null);
+
+  // ─ PWA install ─
+  const installPromptRef=useRef(null);
+  const[showInstallBanner,setShowInstallBanner]=useState(false);
+  const chatEndRef=useRef(null);
+
+  useEffect(()=>{
+    const h=(e)=>{e.preventDefault();installPromptRef.current=e;setShowInstallBanner(true);};
+    window.addEventListener("beforeinstallprompt",h);
+    return()=>window.removeEventListener("beforeinstallprompt",h);
+  },[]);
+  useEffect(()=>{chatEndRef.current?.scrollIntoView({behavior:"smooth"});},[chatMessages]);
+
+  // ─ Auto-save ─
+  useEffect(()=>{
+    onSave&&onSave({members,dailyRecords,groceries,mealRate,specialWeekday,specialDistrib,rateInput,inventory,receipts,guestMeals,tgToken,tgChatId,aiProvider,geminiKey,openaiKey,cashAdjustment,prevManagerAmount,prevManagerNote,marketDays,cookingLog});
+  },[members,dailyRecords,groceries,mealRate,specialWeekday,specialDistrib,rateInput,inventory,receipts,guestMeals,tgToken,tgChatId,aiProvider,geminiKey,openaiKey,cashAdjustment,prevManagerAmount,prevManagerNote,marketDays,cookingLog]);
+
+  const notify=(msg,type="success")=>{setNotification({msg,type});setTimeout(()=>setNotification(null),3500);};
+
+  // ── Meal helpers ──
+  const isSpecialDay=(d)=>new Date(d+"T00:00:00").getDay()===specialWeekday;
+  const getMealRatesForDay=(d)=>({morning:MEAL_RATES.morning,lunch:isSpecialDay(d)?SPECIAL_LUNCH:MEAL_RATES.lunch,dinner:MEAL_RATES.dinner});
+  const getMemberMealsOnDate=(id,d)=>{
+    const rec=dailyRecords[d];
+    if(rec&&rec[id]!==undefined)return rec[id];
+    const m=members.find(x=>x.id===id);
+    return m?{...m.activeMeals}:{morning:true,lunch:true,dinner:true};
+  };
+  const getGuestMealsOnDate=(id,d)=>guestMeals[d]?.[id]||{morning:0,lunch:0,dinner:0};
+  const setGuestCount=(id,d,key,delta)=>{
+    setGuestMeals(prev=>{const dd=prev[d]||{};const md=dd[id]||{morning:0,lunch:0,dinner:0};const nv=Math.max(0,(md[key]||0)+delta);return{...prev,[d]:{...dd,[id]:{...md,[key]:nv}}};});
+  };
+  const getMemberDailyMeals=(id,d)=>{
+    const meals=getMemberMealsOnDate(id,d);
+    const guests=getGuestMealsOnDate(id,d);
+    const rates=getMealRatesForDay(d);
+    let t=0;
+    if(meals.morning)t+=rates.morning*(1+(guests.morning||0));
+    if(meals.lunch)  t+=rates.lunch  *(1+(guests.lunch  ||0));
+    if(meals.dinner) t+=rates.dinner *(1+(guests.dinner ||0));
+    return t;
+  };
+
+  const today=new Date();
+  const currentMonthDates=getMonthDates(today.getFullYear(),today.getMonth());
+
+  const totalMealsThisMonth=useMemo(()=>currentMonthDates.reduce((s,d)=>s+members.reduce((ms,m)=>ms+getMemberDailyMeals(m.id,d),0),0),[members,dailyRecords,specialWeekday,guestMeals]);
+  const totalGroceriesThisMonth=useMemo(()=>currentMonthDates.reduce((sum,d)=>sum+(groceries[d]||[]).reduce((s,i)=>s+i.amount,0),0),[groceries]);
+  const totalCostThisMonth=totalMealsThisMonth*mealRate+totalGroceriesThisMonth;
+  const costPerMealUnit=totalMealsThisMonth>0?totalCostThisMonth/totalMealsThisMonth:0;
+  const totalDeposit=members.reduce((s,m)=>s+m.deposit,0);
+  const totalDue=members.reduce((s,m)=>s+(m.dueAmount||0),0);
+  const cashInHand=totalDeposit+prevManagerAmount+cashAdjustment-totalCostThisMonth;
+  const calculatedMealRate=totalMealsThisMonth>0?totalGroceriesThisMonth/totalMealsThisMonth:0;
+  const getMemberMonthCost=(id)=>currentMonthDates.reduce((s,d)=>s+getMemberDailyMeals(id,d),0)*costPerMealUnit;
+  const getMemberBalance=(m)=>m.deposit-getMemberMonthCost(m.id)-(m.dueAmount||0);
+
+  const allGroceries=useMemo(()=>{const list=[];Object.entries(groceries).forEach(([date,items])=>items.forEach(item=>list.push({...item,date})));return list.sort((a,b)=>b.date.localeCompare(a.date));},[groceries]);
+
+  const rateStatus=()=>{
+    if(calculatedMealRate===0)return null;
+    if(calculatedMealRate<RATE_MIN)return{type:"low",msg:`মিল রেট ৳${calculatedMealRate.toFixed(2)} — কম (লক্ষ্য ৳${RATE_MIN}-৳${RATE_MAX})`};
+    if(calculatedMealRate>RATE_MAX)return{type:"high",msg:`⚠️ মিল রেট ৳${calculatedMealRate.toFixed(2)} — বেশি!`};
+    return{type:"ok",msg:`✅ মিল রেট ৳${calculatedMealRate.toFixed(2)} — ঠিক আছে`};
+  };
+  const rs=rateStatus();
+  const lowInv=inventory.filter(i=>i.quantity<=i.minAlert&&i.minAlert>0);
+  const specialDatesThisMonth=currentMonthDates.filter(d=>isSpecialDay(d));
+
+  // ── Meal toggle ──
+  const toggleMeal=(id,meal)=>{
+    const cur=getMemberMealsOnDate(id,selectedDate);
+    setDailyRecords(prev=>({...prev,[selectedDate]:{...(prev[selectedDate]||{}),[id]:{...cur,[meal]:!cur[meal]}}}));
+  };
+  const toggleDefaultMeal=(id,meal)=>setMembers(prev=>prev.map(m=>m.id===id?{...m,activeMeals:{...m.activeMeals,[meal]:!m.activeMeals[meal]}}:m));
+
+  // ── Deposit & Due ──
+  const addDeposit=(id)=>{
+    const amt=parseFloat(depositInput[id]);
+    if(!amt||amt<=0)return notify("সঠিক পরিমাণ দিন","error");
+    setMembers(prev=>prev.map(m=>m.id===id?{...m,deposit:m.deposit+amt,depositHistory:[...(m.depositHistory||[]),{date:getTodayKey(),amount:amt}]}:m));
+    setDepositInput(prev=>({...prev,[id]:""}));
+    notify(`৳${amt} জমা হয়েছে`);
+  };
+  const addDue=(id)=>{
+    const amt=parseFloat(dueInput[id]);
+    if(!amt||amt<=0)return notify("সঠিক পরিমাণ দিন","error");
+    setMembers(prev=>prev.map(m=>m.id===id?{...m,dueAmount:(m.dueAmount||0)+amt,dueHistory:[...(m.dueHistory||[]),{date:getTodayKey(),amount:amt,note:"বকেয়া যোগ"}]}:m));
+    setDueInput(prev=>({...prev,[id]:""}));
+    notify(`বকেয়া ৳${amt} যোগ হয়েছে`);
+  };
+  const clearDue=(id)=>{
+    if(!window.confirm("এই সদস্যের বকেয়া পরিশোধ হিসেবে চিহ্নিত করবেন?"))return;
+    setMembers(prev=>prev.map(m=>m.id===id?{...m,dueAmount:0,dueHistory:[...(m.dueHistory||[]),{date:getTodayKey(),amount:0,note:"বকেয়া পরিশোধ"}]}:m));
+    notify("বকেয়া পরিশোধ সম্পন্ন");
+  };
+
+  // ── Grocery ──
+  const addGrocery=()=>{
+    if(!grocItem.trim())return notify("আইটেমের নাম দিন","error");
+    const amt=parseFloat(grocAmt);
+    if(!amt||amt<=0)return notify("সঠিক মূল্য দিন","error");
+    setGroceries(prev=>({...prev,[grocDate]:[...(prev[grocDate]||[]),{id:genId(),item:grocItem.trim(),amount:amt}]}));
+    setGrocItem("");setGrocAmt("");
+    notify(`${grocItem} (৳${amt}) যোগ হয়েছে`);
+  };
+  const removeGrocery=(date,id)=>setGroceries(prev=>({...prev,[date]:(prev[date]||[]).filter(g=>g.id!==id)}));
+
+  // ── Members ──
+  const addMember=()=>{
+    if(!newMemberName.trim())return notify("নাম দিন","error");
+    setMembers(p=>[...p,{id:Math.max(...p.map(x=>x.id),0)+1,name:newMemberName.trim(),room:newMemberRoom.trim()||`${Math.max(...p.map(x=>x.id),0)+1}`,activeMeals:{morning:true,lunch:true,dinner:true},deposit:0,depositHistory:[],dueAmount:0,dueHistory:[]}]);
+    setNewMemberName("");setNewMemberRoom("");
+    notify("নতুন সদস্য যোগ হয়েছে");
+  };
+
+  // ── Special distrib ──
+  const addSpecialDistrib=()=>{
+    if(!sdRoom.trim())return notify("রুম নম্বর দিন","error");
+    const cnt=parseInt(sdCount);
+    if(!cnt||cnt<1)return notify("মিলের সংখ্যা দিন","error");
+    if(!isSpecialDay(sdDate))return notify("এই তারিখটি বিশেষ দিন নয়!","error");
+    const entry={id:genId(),room:sdRoom.trim(),count:cnt,collectedBy:sdCollector.trim()||sdRoom.trim(),time:new Date().toLocaleTimeString("bn-BD",{hour:"2-digit",minute:"2-digit"})};
+    setSpecialDistrib(prev=>({...prev,[sdDate]:[...(prev[sdDate]||[]),entry]}));
+    setSdRoom("");setSdCount("");setSdCollector("");
+    notify(`রুম ${entry.room} — ${cnt}টি মিল রেকর্ড`);
+  };
+
+  // ── Inventory ──
+  const addInventoryItem=()=>{
+    if(!invName.trim())return notify("নাম দিন","error");
+    setInventory(prev=>[...prev,{id:genId(),name:invName.trim(),unit:invUnit.trim()||"পিস",quantity:parseFloat(invQty)||0,minAlert:parseFloat(invMin)||0}]);
+    setInvName("");setInvUnit("");setInvQty("");setInvMin("");setShowAddInvForm(false);
+    notify(`${invName} যোগ হয়েছে`);
+  };
+  const adjustInventory=(id)=>{
+    if(invAdjType==="set"){
+      const amt=parseFloat(invAdjAmt);
+      if(isNaN(amt)||amt<0)return notify("সঠিক পরিমাণ দিন","error");
+      const item=inventory.find(i=>i.id===id);
+      setInventory(prev=>prev.map(i=>i.id===id?{...i,quantity:amt}:i));
+      notify(`${item?.name} = ${amt} ${item?.unit} (সেট করা হয়েছে)`);
+    } else {
+      const amt=parseFloat(invAdjAmt);
+      if(!amt||amt<=0)return notify("পরিমাণ দিন","error");
+      const item=inventory.find(i=>i.id===id);
+      setInventory(prev=>prev.map(i=>{if(i.id!==id)return i;const nq=invAdjType==="add"?i.quantity+amt:Math.max(0,i.quantity-amt);return{...i,quantity:nq};}));
+      notify(`${item?.name} ${invAdjType==="add"?"+":"-"}${amt} ${item?.unit}`);
+    }
+    setInvAdjId(null);setInvAdjAmt("");setInvAdjType("set");
+  };
+
+  // ── Market Day ──
+  const toggleMarketAttendance=(id)=>{
+    setMarketDays(prev=>{
+      const day=prev[marketDayDate]||{};
+      return{...prev,[marketDayDate]:{...day,[id]:!day[id]}};
+    });
+  };
+
+  // ── Cooking Log ──
+  const addCookingEntry=()=>{
+    if(!cookItem.trim())return notify("রান্নার আইটেম লিখুন","error");
+    setCookingLog(prev=>({...prev,[cookDate]:[...(prev[cookDate]||[]),{id:genId(),item:cookItem.trim(),note:cookNote.trim()}]}));
+    setCookItem("");setCookNote("");
+    notify("রান্না লগ যোগ হয়েছে");
+  };
+  const removeCookingEntry=(date,id)=>setCookingLog(prev=>({...prev,[date]:(prev[date]||[]).filter(e=>e.id!==id)}));
+
+  // ── Telegram (FIXED: base64 → Blob → FormData) ──
+  const sendReceiptToTelegram=async(file,receipt)=>{
+    if(!tgToken||!tgChatId)return;
+    setTgSending(true);
+    try{
+      const caption=`🧾 *বাজারের রশিদ*\n📅 ${fmtDate(receipt.date)}\n📝 ${receipt.note}\n🕐 ${new Date(receipt.uploadedAt).toLocaleString("bn-BD")}`;
+      const fd=new FormData();
+      fd.append("chat_id",tgChatId);
+      fd.append("caption",caption);
+      fd.append("parse_mode","Markdown");
+      fd.append("photo",file,"receipt.jpg");
+      const res=await fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`,{method:"POST",body:fd});
+      const data=await res.json();
+      if(data.ok)notify("📱 টেলিগ্রামে পাঠানো হয়েছে!");
+      else notify(`⚠️ Telegram: ${data.description||"ব্যর্থ"}`,"error");
+    }catch{notify("⚠️ Telegram সংযোগ ব্যর্থ","error");}
+    setTgSending(false);
+  };
+
+  const resendToTelegram=async(receipt)=>{
+    if(!tgToken||!tgChatId)return notify("Telegram Token ও Chat ID সেট করুন","error");
+    setTgSending(true);
+    try{
+      // Convert base64 image to Blob and send as FormData
+      const blob=dataURLtoBlob(receipt.image);
+      const caption=`🧾 *রশিদ (পুনরায়)*\n📅 ${fmtDate(receipt.date)}\n📝 ${receipt.note}`;
+      const fd=new FormData();
+      fd.append("chat_id",tgChatId);
+      fd.append("caption",caption);
+      fd.append("parse_mode","Markdown");
+      fd.append("photo",blob,"receipt.jpg");
+      const res=await fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`,{method:"POST",body:fd});
+      const data=await res.json();
+      if(data.ok)notify("📱 টেলিগ্রামে পাঠানো হয়েছে!");
+      else notify(`⚠️ ${data.description||"ব্যর্থ"}`,"error");
+    }catch(e){notify("⚠️ সংযোগ ব্যর্থ","error");}
+    setTgSending(false);
+  };
+
+  const handleReceiptUpload=async(e)=>{
+    const file=e.target.files?.[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=async(ev)=>{
+      const receipt={id:genId(),date:receiptDate,note:receiptNote.trim()||"বাজারের রশিদ",image:ev.target.result,uploadedAt:new Date().toISOString()};
+      setReceipts(prev=>[...prev,receipt]);
+      setReceiptNote("");
+      notify("রশিদ সেভ হয়েছে");
+      if(tgToken&&tgChatId){await sendReceiptToTelegram(file,receipt);}
+    };
+    reader.readAsDataURL(file);
+    e.target.value="";
+  };
+
+  // ── AI Context ──
+  const buildContext=useCallback(()=>{
+    const mSummary=members.map(m=>{
+      const meals=currentMonthDates.reduce((s,d)=>s+getMemberDailyMeals(m.id,d),0);
+      const cost=meals*costPerMealUnit;
+      const bal=getMemberBalance(m);
+      return`${m.name}(রুম${m.room}):মিল=${meals.toFixed(1)},খরচ=৳${Math.round(cost)},জমা=৳${m.deposit},বকেয়া=৳${m.dueAmount||0},ব্যালেন্স=৳${Math.round(bal)}`;
+    }).join("\n");
+    const invSummary=inventory.map(i=>`${i.name}:${i.quantity}${i.unit}(সতর্কতা:${i.minAlert})`).join("\n");
+    const recentGroc=allGroceries.slice(0,15).map(g=>`${fmtDate(g.date)}:${g.item} ৳${g.amount}`).join("\n");
+    return`তুমি "${OWNER}"-এর মিল ম্যানেজার AI।
+বাংলা বা যেকোনো ভাষায় উত্তর দাও।
+Action format: [ACTION:{"type":"inventory_add","name":"তেল","amount":5,"unit":"লিটার"}]
+বা [ACTION:{"type":"inventory_remove","name":"তেল","amount":2}]
+বা [ACTION:{"type":"add_grocery","item":"চাল","amount":500,"date":"today"}]
+=== লাইভ ডেটা ===
+সদস্য:${members.length}জন|মিল রেট:৳${mealRate}/ইউনিট
+মোট মিল:${totalMealsThisMonth.toFixed(1)}|বাজার:৳${Math.round(totalGroceriesThisMonth)}
+হিসাবকৃত রেট:৳${calculatedMealRate.toFixed(2)}|হাতে:৳${Math.round(cashInHand)}
+আগের ম্যানেজার থেকে:৳${prevManagerAmount}|সমন্বয়:৳${cashAdjustment}
+=== সদস্য হিসাব ===
+${mSummary}
+=== ইনভেন্টরি ===
+${invSummary}
+=== বাজার (সাম্প্রতিক) ===
+${recentGroc||"নেই"}
+নিয়ম:সকাল=0.5,দুপুর=1.0(বিশেষ=2.5),রাত=1.0 ইউনিট।লক্ষ্যমাত্রা:৳${RATE_MIN}-৳${RATE_MAX}`;
+  },[members,dailyRecords,groceries,mealRate,inventory,specialWeekday,cashAdjustment,prevManagerAmount]);
+
+  const processAction=(actionStr)=>{
+    try{
+      const match=actionStr.match(/\[ACTION:(.*?)\]/);
+      if(!match)return;
+      const action=JSON.parse(match[1]);
+      if(action.type==="inventory_add"){
+        setInventory(prev=>prev.map(item=>{if(item.name.includes(action.name)||action.name.includes(item.name.split(" ")[0]))return{...item,quantity:item.quantity+action.amount};return item;}));
+        notify(`✅ AI: ${action.name} +${action.amount}`);
+      }else if(action.type==="inventory_remove"){
+        setInventory(prev=>prev.map(item=>{if(item.name.includes(action.name)||action.name.includes(item.name.split(" ")[0]))return{...item,quantity:Math.max(0,item.quantity-action.amount)};return item;}));
+        notify(`✅ AI: ${action.name} -${action.amount}`);
+      }else if(action.type==="add_grocery"){
+        const date=action.date==="today"?getTodayKey():action.date;
+        setGroceries(prev=>({...prev,[date]:[...(prev[date]||[]),{id:genId(),item:action.item,amount:action.amount}]}));
+        notify(`✅ AI: ${action.item} ৳${action.amount} বাজারে`);
+      }
+    }catch{}
+  };
+
+  const sendChat=async()=>{
+    if(!chatInput.trim()||chatLoading)return;
+    const userMsg=chatInput.trim();
+    setChatInput("");
+    const newMsgs=[...chatMessages,{role:"user",text:userMsg}];
+    setChatMessages(newMsgs);
+    setChatLoading(true);
+    try{
+      let reply="";
+      if(aiProvider==="gemini"&&geminiKey){
+        const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{role:"user",parts:[{text:buildContext()+"\n\nUser: "+userMsg}]}]})});
+        const data=await res.json();
+        if(data.error)reply=`⚠️ Gemini Error: ${data.error.message||data.error.status||JSON.stringify(data.error)}`;
+        else reply=data.candidates?.[0]?.content?.parts?.[0]?.text||"Gemini: খালি উত্তর।";
+      }else if(aiProvider==="openai"&&openaiKey){
+        const res=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${openaiKey}`},body:JSON.stringify({model:"gpt-4o-mini",messages:[{role:"system",content:buildContext()},...newMsgs.slice(1).map(m=>({role:m.role==="user"?"user":"assistant",content:m.text}))]})});
+        const data=await res.json();
+        if(data.error)reply=`⚠️ OpenAI Error: ${data.error.message||data.error.code||JSON.stringify(data.error)}`;
+        else reply=data.choices?.[0]?.message?.content||"OpenAI: খালি উত্তর।";
+      }else if(!geminiKey&&!openaiKey){
+        reply="⚠️ API Key সেট করুন! সেটিং → 🤖 AI ট্যাবে যান। Gemini key বিনামূল্যে পাওয়া যায়: aistudio.google.com/apikey";
+      }else{
+        // Fallback: try Gemini if key exists even if provider mismatch
+        if(geminiKey){
+          const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{role:"user",parts:[{text:buildContext()+"\n\nUser: "+userMsg}]}]})});
+          const data=await res.json();
+          if(data.error)reply=`⚠️ Gemini Error: ${data.error.message}`;
+          else reply=data.candidates?.[0]?.content?.parts?.[0]?.text||"খালি উত্তর।";
+        }else{
+          reply="⚠️ AI Key নেই। সেটিং → 🤖 AI ট্যাবে Gemini Key দিন (বিনামূল্যে)।";
+        }
+      }
+      if(reply.includes("[ACTION:")){processAction(reply);reply=reply.replace(/\[ACTION:.*?\]/g,"").trim();}
+      setChatMessages(prev=>[...prev,{role:"assistant",text:reply}]);
+    }catch(err){
+      setChatMessages(prev=>[...prev,{role:"assistant",text:`⚠️ Network Error: ${err.message||"অজানা সমস্যা"}। ইন্টারনেট সংযোগ চেক করুন।`}]);
+    }
+    setChatLoading(false);
+  };
+
+  // ── Styles ──
+  const inp=(extra={})=>({background:C.surface,border:`1px solid ${C.border}`,color:C.text,borderRadius:10,padding:"10px 14px",fontSize:14,fontFamily:"inherit",boxSizing:"border-box",width:"100%",...extra});
+  const card=(extra={})=>({background:C.card,borderRadius:14,padding:16,border:`1px solid ${C.border}`,marginBottom:12,...extra});
+  const btn=(bg=C.primary,extra={})=>({background:bg,border:"none",borderRadius:10,padding:"10px 18px",color:"#050d0f",fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:13,...extra});
+  const outlineBtn=(color=C.primary,extra={})=>({background:`${color}18`,border:`1px solid ${color}66`,borderRadius:8,padding:"7px 14px",color,cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:700,...extra});
+
+  const TABS=[
+    {id:"dashboard",label:"ড্যাশবোর্ড",icon:"📊"},
+    {id:"daily",label:"দৈনিক মিল",icon:"🍽️"},
+    {id:"members",label:"সদস্য",icon:"👥"},
+    {id:"grocery",label:"বাজার",icon:"🛒"},
+    {id:"market_day",label:"বাজার দিন",icon:"🧺"},
+    {id:"cooking",label:"রান্না লগ",icon:"🥘"},
+    {id:"inventory",label:"মজুদ",icon:"📦"},
+    {id:"receipts",label:"রশিদ",icon:"🧾"},
+    {id:"special",label:"বিশেষ",icon:"⭐"},
+    {id:"accounts",label:"হিসাব",icon:"💰"},
+    {id:"settings",label:"সেটিং",icon:"⚙️"},
+  ];
+
+  // ── Daily meal stats for selected date ──
+  const dayStats=useMemo(()=>{
+    const rates=getMealRatesForDay(selectedDate);
+    let morningCount=0,lunchCount=0,dinnerCount=0,morningMeals=0,lunchMeals=0,dinnerMeals=0;
+    members.forEach(m=>{
+      const meals=getMemberMealsOnDate(m.id,selectedDate);
+      const guests=getGuestMealsOnDate(m.id,selectedDate);
+      if(meals.morning){morningCount++;morningMeals+=rates.morning*(1+(guests.morning||0));}
+      if(meals.lunch){lunchCount++;lunchMeals+=rates.lunch*(1+(guests.lunch||0));}
+      if(meals.dinner){dinnerCount++;dinnerMeals+=rates.dinner*(1+(guests.dinner||0));}
+    });
+    return{morningCount,lunchCount,dinnerCount,morningMeals,lunchMeals,dinnerMeals,total:morningMeals+lunchMeals+dinnerMeals};
+  },[members,dailyRecords,selectedDate,guestMeals,specialWeekday]);
+
+  const sortedByRoom=(list)=>[...list].sort((a,b)=>{const ra=parseInt(a.room)||999,rb=parseInt(b.room)||999;return ra-rb;});
+
+  return(
+    <div style={{fontFamily:"'Hind Siliguri','Noto Sans Bengali',sans-serif",minHeight:"100vh",background:C.bg,color:C.text}}>
+      <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
+      {/* Install Banner */}
+      {showInstallBanner&&(
+        <div style={{position:"fixed",top:0,left:0,right:0,zIndex:9999,background:`linear-gradient(135deg,${C.primary},${C.secondary})`,padding:"12px 16px",display:"flex",alignItems:"center",gap:10,boxShadow:"0 4px 20px #000a"}}>
+          <div style={{fontSize:20}}>📱</div>
+          <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:"#050d0f"}}>অ্যাপ ইনস্টল করুন!</div><div style={{fontSize:11,color:"#0a2020"}}>ইন্টারনেট ছাড়াও চলবে ✓</div></div>
+          <button onClick={()=>{installPromptRef.current?.prompt();setShowInstallBanner(false);}} style={{background:"#050d0f",border:"none",borderRadius:8,padding:"6px 14px",color:C.primary,cursor:"pointer",fontSize:12,fontFamily:"inherit",fontWeight:700}}>ইনস্টল</button>
+          <button onClick={()=>setShowInstallBanner(false)} style={{background:"none",border:"none",color:"#050d0f",cursor:"pointer",fontSize:18,padding:"0 4px"}}>✕</button>
+        </div>
+      )}
+
+      {/* Toast */}
+      {notification&&(
+        <div style={{position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:notification.type==="error"?"#ef4444":C.primary,color:notification.type==="error"?"#fff":"#050d0f",padding:"11px 26px",borderRadius:14,fontWeight:700,boxShadow:"0 4px 32px #000b",maxWidth:"92vw",textAlign:"center",fontSize:14,zIndex:10000}}>
+          {notification.msg}
+        </div>
+      )}
+
+      {/* Receipt Modal */}
+      {viewReceipt&&(
+        <div onClick={()=>setViewReceipt(null)} style={{position:"fixed",inset:0,background:"#000d",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:C.card,borderRadius:18,padding:18,maxWidth:420,width:"100%",border:`1px solid ${C.borderHi}`}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:14}}>
+              <div><div style={{fontWeight:700,color:C.primary,fontSize:15}}>{viewReceipt.note}</div><div style={{fontSize:12,color:C.muted}}>{fmtDate(viewReceipt.date)}</div></div>
+              <button onClick={()=>setViewReceipt(null)} style={{background:"none",border:"none",color:C.danger,fontSize:22,cursor:"pointer"}}>✕</button>
+            </div>
+            <img src={viewReceipt.image} alt="receipt" style={{width:"100%",borderRadius:12,maxHeight:400,objectFit:"contain",background:C.surface}}/>
+            <div style={{display:"flex",gap:8,marginTop:14}}>
+              <button onClick={()=>{setReceipts(p=>p.filter(r=>r.id!==viewReceipt.id));setViewReceipt(null);}} style={{...btn(C.danger,{color:"#fff"}),flex:1,fontSize:12}}>🗑️ মুছুন</button>
+              <button onClick={()=>resendToTelegram(viewReceipt)} disabled={tgSending||!tgToken||!tgChatId} style={{...btn(C.secondary,{color:"#fff"}),flex:1,fontSize:12,opacity:(!tgToken||!tgChatId)?0.5:1}}>
+                {tgSending?"পাঠানো হচ্ছে...":"📱 Telegram"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── HEADER ── */}
+      <div style={{background:`linear-gradient(135deg,${C.surface},${C.card})`,borderBottom:`1px solid ${C.border}`,padding:"12px 14px",position:"sticky",top:0,zIndex:100}}>
+        <div style={{maxWidth:820,margin:"0 auto"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <div>
+              <div style={{fontSize:17,fontWeight:700,color:C.primary}}>🏠 মিল ম্যানেজার <span style={{color:C.secondary}}>Pro</span></div>
+              <div style={{fontSize:10,color:C.muted}}>{today.getDate()} {MONTHS_BN[today.getMonth()]} {today.getFullYear()} · {members.length} সদস্য · by {OWNER}</div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:9,color:C.muted}}>মিল রেট</div>
+              <div style={{fontSize:18,fontWeight:700,color:rs?.type==="high"?C.danger:rs?.type==="ok"?C.success:C.accent}}>৳{calculatedMealRate.toFixed(1)}</div>
+            </div>
+          </div>
+          {rs?.type==="high"&&<div style={{background:`${C.danger}18`,border:`1px solid ${C.danger}44`,borderRadius:8,padding:"5px 12px",fontSize:12,color:C.danger,marginBottom:6}}>{rs.msg}</div>}
+          {lowInv.length>0&&<div style={{background:`${C.warn}18`,border:`1px solid ${C.warn}44`,borderRadius:8,padding:"5px 12px",fontSize:12,color:C.warn,marginBottom:6}}>⚠️ কম মজুদ: {lowInv.slice(0,3).map(i=>`${i.name}(${i.quantity}${i.unit})`).join(", ")}</div>}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5}}>
+            {[["মোট খরচ",`৳${Math.round(totalCostThisMonth)}`,C.accent],["বাজার",`৳${Math.round(totalGroceriesThisMonth)}`,C.danger],["রেট",`৳${calculatedMealRate.toFixed(1)}`,C.warn],["হাতে",`৳${Math.round(cashInHand)}`,cashInHand>=0?C.primary:C.danger]].map(([l,v,c])=>(
+              <div key={l} style={{background:`${c}10`,borderRadius:8,padding:"6px 8px",border:`1px solid ${c}22`}}>
+                <div style={{fontSize:9,color:C.muted}}>{l}</div>
+                <div style={{fontSize:13,fontWeight:700,color:c}}>{v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── TABS ── */}
+      <div style={{display:"flex",background:C.card,borderBottom:`1px solid ${C.border}`,overflowX:"auto"}}>
+        {TABS.map(t=>(
+          <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:"0 0 auto",padding:"8px 6px",border:"none",background:"transparent",cursor:"pointer",color:tab===t.id?C.primary:C.muted,borderBottom:tab===t.id?`2px solid ${C.primary}`:"2px solid transparent",fontSize:9,fontFamily:"inherit",fontWeight:tab===t.id?700:400,minWidth:52,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+            <div style={{fontSize:14}}>{t.icon}</div>{t.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{padding:12,maxWidth:820,margin:"0 auto",paddingBottom:100}}>
+
+        {/* ══ DASHBOARD ══ */}
+        {tab==="dashboard"&&(
+          <div>
+            {/* Cash Hero */}
+            <div style={{background:`linear-gradient(135deg,${C.card},${C.surface})`,borderRadius:16,padding:18,marginBottom:12,border:`2px solid ${cashInHand>=0?C.primary:C.danger}`,boxShadow:`0 0 32px ${cashInHand>=0?C.glow:"#ef444422"}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div>
+                <div style={{fontSize:10,color:C.muted,marginBottom:4}}>💵 হাতে নগদ টাকা</div>
+                <div style={{fontSize:36,fontWeight:700,color:cashInHand>=0?C.primary:C.danger}}> ৳{Math.round(cashInHand)}</div>
+                <div style={{fontSize:11,color:C.muted,marginTop:4}}>জমা: <span style={{color:C.primary}}>৳{Math.round(totalDeposit)}</span> · খরচ: <span style={{color:C.danger}}>৳{Math.round(totalCostThisMonth)}</span></div>
+                {prevManagerAmount>0&&<div style={{fontSize:11,color:C.accent,marginTop:2}}>আগের ম্যানেজার: ৳{prevManagerAmount}</div>}
+                {cashAdjustment!==0&&<div style={{fontSize:11,color:C.secondary,marginTop:2}}>সমন্বয়: {cashAdjustment>=0?"+":""}{cashAdjustment}</div>}
+              </div>
+              <div style={{fontSize:44}}>{cashInHand>=0?"💰":"⛔"}</div>
+            </div>
+
+            {/* Cash Control */}
+            <div style={card({border:`1px solid ${C.secondary}33`})}>
+              <div style={{fontSize:13,fontWeight:700,color:C.secondary,marginBottom:12}}>💵 হাতে টাকার নিয়ন্ত্রণ</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+                <div>
+                  <div style={{fontSize:11,color:C.muted,marginBottom:4}}>আগের ম্যানেজার থেকে (৳)</div>
+                  <input type="number" placeholder={`বর্তমান: ৳${prevManagerAmount}`} value={prevMgrInput} onChange={e=>setPrevMgrInput(e.target.value)} style={inp({fontSize:13})}/>
+                </div>
+                <div>
+                  <div style={{fontSize:11,color:C.muted,marginBottom:4}}>নোট</div>
+                  <input placeholder="যেমন: জানুয়ারি হস্তান্তর" value={prevMgrNoteInput} onChange={e=>setPrevMgrNoteInput(e.target.value)} style={inp({fontSize:13})}/>
+                </div>
+              </div>
+              <button onClick={()=>{const a=parseFloat(prevMgrInput);if(!isNaN(a)){setPrevManagerAmount(a);if(prevMgrNoteInput)setPrevManagerNote(prevMgrNoteInput);setPrevMgrInput("");setPrevMgrNoteInput("");notify("আগের ম্যানেজারের টাকা সেভ হয়েছে");}else notify("সঠিক পরিমাণ দিন","error");}} style={{...btn(C.secondary,{color:"#fff"}),width:"100%",marginBottom:10}}>✓ সেভ করুন</button>
+              <div style={{borderTop:`1px solid ${C.border}`,paddingTop:10}}>
+                <div style={{fontSize:11,color:C.muted,marginBottom:4}}>ম্যানুয়াল সমন্বয় (৳) — ধনাত্মক বা ঋণাত্মক</div>
+                <div style={{display:"flex",gap:8}}>
+                  <input type="number" placeholder={`বর্তমান সমন্বয়: ${cashAdjustment}`} value={cashAdjInput} onChange={e=>setCashAdjInput(e.target.value)} style={{...inp(),flex:1,fontSize:13}}/>
+                  <button onClick={()=>{const a=parseFloat(cashAdjInput);if(!isNaN(a)){setCashAdjustment(a);setCashAdjInput("");notify("সমন্বয় সেভ হয়েছে");}else notify("সঠিক পরিমাণ দিন","error");}} style={outlineBtn(C.accent)}>সেভ</button>
+                </div>
+                {prevManagerNote&&<div style={{fontSize:11,color:C.muted,marginTop:6}}>📝 {prevManagerNote}</div>}
+              </div>
+            </div>
+
+            {rs&&(
+              <div style={{background:rs.type==="high"?`${C.danger}18`:rs.type==="ok"?`${C.success}18`:`${C.warn}18`,border:`1px solid ${rs.type==="high"?C.danger:rs.type==="ok"?C.success:C.warn}`,borderRadius:12,padding:12,marginBottom:12}}>
+                <div style={{fontSize:13,fontWeight:700,color:rs.type==="high"?C.danger:rs.type==="ok"?C.success:C.warn}}>{rs.msg}</div>
+                <div style={{fontSize:11,color:C.muted,marginTop:3}}>৳{Math.round(totalGroceriesThisMonth)} ÷ {totalMealsThisMonth.toFixed(1)} মিল = ৳{calculatedMealRate.toFixed(2)}/মিল</div>
+              </div>
+            )}
+
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+              {[["🍽️ মোট মিল",`${totalMealsThisMonth.toFixed(1)} ইউ`,C.secondary],["🛒 বাজার",`৳${Math.round(totalGroceriesThisMonth)}`,C.danger],["💸 মোট খরচ",`৳${Math.round(totalCostThisMonth)}`,C.accent],["💰 মোট জমা",`৳${Math.round(totalDeposit)}`,C.primary]].map(([l,v,c])=>(
+                <div key={l} style={{background:C.card,borderRadius:12,padding:12,border:`1px solid ${c}33`}}>
+                  <div style={{fontSize:10,color:C.muted,marginBottom:4}}>{l}</div>
+                  <div style={{fontSize:20,fontWeight:700,color:c}}>{v}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* বকেয়া সদস্য */}
+            <div style={card({border:`1px solid ${C.danger}33`})}>
+              <div style={{fontSize:13,fontWeight:700,color:C.danger,marginBottom:10}}>⚠️ বকেয়া সদস্য</div>
+              {members.map(m=>({...m,bal:getMemberBalance(m)})).filter(m=>m.bal<0).sort((a,b)=>a.bal-b.bal).map(m=>(
+                <div key={m.id} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${C.border}`,fontSize:13}}>
+                  <span style={{color:C.text}}>{m.name} <span style={{color:C.muted,fontSize:11}}>(রুম {m.room})</span>{(m.dueAmount||0)>0&&<span style={{color:C.danger,fontSize:10,marginLeft:4}}>+বকেয়া৳{m.dueAmount}</span>}</span>
+                  <span style={{color:C.danger,fontWeight:700}}>বকেয়া ৳{Math.abs(Math.round(m.bal))}</span>
+                </div>
+              ))}
+              {!members.some(m=>getMemberBalance(m)<0)&&<div style={{color:C.success,fontSize:13,textAlign:"center",padding:8}}>✓ সবার হিসাব ঠিক আছে</div>}
+            </div>
+
+            {lowInv.length>0&&(
+              <div style={card({border:`1px solid ${C.warn}44`})}>
+                <div style={{fontSize:13,fontWeight:700,color:C.warn,marginBottom:10}}>📦 কম মজুদ</div>
+                {lowInv.map(i=>(
+                  <div key={i.id} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:`1px solid ${C.border}`,fontSize:13}}>
+                    <span style={{color:C.text}}>{i.name}</span>
+                    <span style={{color:C.danger,fontWeight:700}}>{i.quantity} {i.unit}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div style={card()}>
+              <div style={{fontSize:13,fontWeight:700,color:C.primary,marginBottom:10}}>🛒 সাম্প্রতিক বাজার</div>
+              {allGroceries.slice(0,6).map((g,i)=>(
+                <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${C.border}`,fontSize:13}}>
+                  <span><span style={{color:C.muted,fontSize:11}}>{fmtDate(g.date)} · </span><span style={{color:C.text}}>{g.item}</span></span>
+                  <span style={{color:C.danger,fontWeight:600}}>৳{g.amount}</span>
+                </div>
+              ))}
+              {allGroceries.length===0&&<div style={{color:C.muted,textAlign:"center",padding:12}}>কোনো বাজার নেই</div>}
+            </div>
+
+            {/* আজকের রান্না */}
+            {(cookingLog[getTodayKey()]||[]).length>0&&(
+              <div style={card({border:`1px solid #a78bfa33`})}>
+                <div style={{fontSize:13,fontWeight:700,color:"#a78bfa",marginBottom:8}}>🥘 আজকের রান্না</div>
+                {(cookingLog[getTodayKey()]||[]).map(e=>(
+                  <div key={e.id} style={{padding:"5px 0",borderBottom:`1px solid ${C.border}`,fontSize:13,color:C.text}}>• {e.item}{e.note&&<span style={{color:C.muted,fontSize:11}}> — {e.note}</span>}</div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ══ DAILY MEAL ══ */}
+        {tab==="daily"&&(
+          <div>
+            <div style={{display:"flex",gap:8,marginBottom:12,alignItems:"center"}}>
+              <input type="date" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)} style={{...inp(),flex:1}}/>
+              {isSpecialDay(selectedDate)&&<span style={{background:`${C.accent}22`,color:C.accent,padding:"5px 12px",borderRadius:20,fontSize:11,fontWeight:700,whiteSpace:"nowrap"}}>⭐ বিশেষ দিন</span>}
+            </div>
+
+            {/* Daily totals */}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:10}}>
+              {[["☀️ সকাল",dayStats.morningCount+"জন",dayStats.morningMeals.toFixed(1)+"ইউ",C.accent],["🌤️ দুপুর",dayStats.lunchCount+"জন",dayStats.lunchMeals.toFixed(1)+"ইউ",C.success],["🌙 রাত",dayStats.dinnerCount+"জন",dayStats.dinnerMeals.toFixed(1)+"ইউ",C.secondary]].map(([l,c,m,col])=>(
+                <div key={l} style={{background:C.surface,borderRadius:10,padding:10,border:`1px solid ${col}33`,textAlign:"center"}}>
+                  <div style={{fontSize:10,color:C.muted}}>{l}</div>
+                  <div style={{fontSize:14,fontWeight:700,color:col}}>{c}</div>
+                  <div style={{fontSize:10,color:C.muted}}>{m}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{background:`${C.primary}18`,border:`1px solid ${C.primary}33`,borderRadius:10,padding:"8px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",fontSize:13}}>
+              <span style={{color:C.muted}}>মোট মিল আজ</span>
+              <span style={{fontWeight:700,color:C.primary}}>{dayStats.total.toFixed(1)} ইউনিট · {dayStats.morningCount+dayStats.lunchCount+dayStats.dinnerCount} বেলা</span>
+            </div>
+
+            {/* Member rows */}
+            <div style={{background:C.card,borderRadius:12,border:`1px solid ${C.border}`,overflow:"hidden"}}>
+              <div style={{display:"grid",gridTemplateColumns:"34px 1fr 46px 46px 46px 40px",padding:"8px 10px",borderBottom:`1px solid ${C.border}`,fontSize:10,color:C.muted,fontWeight:700}}>
+                <span>রুম</span><span>নাম</span><span style={{textAlign:"center"}}>সকাল</span><span style={{textAlign:"center"}}>দুপুর</span><span style={{textAlign:"center"}}>রাত</span><span style={{textAlign:"center"}}>মিল</span>
+              </div>
+              {sortedByRoom(members).map(m=>{
+                const meals=getMemberMealsOnDate(m.id,selectedDate);
+                const guests=getGuestMealsOnDate(m.id,selectedDate);
+                const total=getMemberDailyMeals(m.id,selectedDate);
+                const hasGuests=(guests.morning||0)+(guests.lunch||0)+(guests.dinner||0)>0;
+                return(
+                  <div key={m.id} style={{borderBottom:`1px solid ${C.border}`}}>
+                    {/* Main row */}
+                    <div style={{display:"grid",gridTemplateColumns:"34px 1fr 46px 46px 46px 40px",padding:"7px 10px",alignItems:"center"}}>
+                      <span style={{fontSize:10,color:C.accent,fontWeight:700}}>{m.room}</span>
+                      <span style={{fontSize:12,fontWeight:600,color:C.text}}>{m.name}{hasGuests&&<span style={{color:C.warn,fontSize:9,marginLeft:3}}>+👤</span>}</span>
+                      {[["morning",C.accent],["lunch",C.success],["dinner",C.secondary]].map(([key,color])=>(
+                        <button key={key} onClick={()=>toggleMeal(m.id,key)} style={{textAlign:"center",padding:"4px 2px",borderRadius:8,border:`1px solid ${meals[key]?color:C.border}`,background:meals[key]?`${color}22`:"transparent",color:meals[key]?color:C.muted,cursor:"pointer",fontSize:16,margin:"0 1px"}}>
+                          {meals[key]?"✓":"✗"}
+                        </button>
+                      ))}
+                      <span style={{textAlign:"center",fontSize:12,fontWeight:700,color:total>0?C.primary:C.muted}}>{total.toFixed(1)}</span>
+                    </div>
+                    {/* Guest row */}
+                    <div style={{display:"grid",gridTemplateColumns:"34px 1fr 46px 46px 46px 40px",padding:"2px 10px 6px",alignItems:"center"}}>
+                      <span></span>
+                      <span style={{fontSize:9,color:C.warn}}>👤 গেস্ট</span>
+                      {["morning","lunch","dinner"].map(key=>{
+                        const gv=guests[key]||0;
+                        const mealOn=meals[key];
+                        return(
+                          <div key={key} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:1}}>
+                            <button onClick={()=>setGuestCount(m.id,selectedDate,key,-1)} disabled={!mealOn||!gv} style={{width:16,height:16,borderRadius:3,border:`1px solid ${C.border}`,background:C.surface,color:mealOn&&gv?C.danger:C.border,cursor:mealOn&&gv?"pointer":"not-allowed",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>−</button>
+                            <span style={{fontSize:10,fontWeight:700,color:gv?C.warn:C.muted,minWidth:10,textAlign:"center"}}>{gv||0}</span>
+                            <button onClick={()=>setGuestCount(m.id,selectedDate,key,1)} disabled={!mealOn} style={{width:16,height:16,borderRadius:3,border:`1px solid ${C.border}`,background:C.surface,color:mealOn?C.success:C.border,cursor:mealOn?"pointer":"not-allowed",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>+</button>
+                          </div>
+                        );
+                      })}
+                      <span style={{fontSize:9,color:C.muted,textAlign:"center"}}>{(guests.morning||0)+(guests.lunch||0)+(guests.dinner||0)>0?`+${(guests.morning||0)+(guests.lunch||0)+(guests.dinner||0)}`:"─"}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{marginTop:10,fontSize:11,color:C.muted,textAlign:"center"}}>
+              💡 গেস্ট মিল: একজনের বেলায় অতিরিক্ত মিল দিলে + বাটনে চাপুন (সেই বেলার রেটে হিসাব হবে)
+            </div>
+          </div>
+        )}
+
+        {/* ══ MEMBERS ══ */}
+        {tab==="members"&&(
+          <div>
+            <div style={{display:"flex",gap:8,marginBottom:12}}>
+              <input value={newMemberName} onChange={e=>setNewMemberName(e.target.value)} placeholder="নাম..." onKeyDown={e=>e.key==="Enter"&&addMember()} style={{...inp(),flex:2,fontSize:13}}/>
+              <input value={newMemberRoom} onChange={e=>setNewMemberRoom(e.target.value)} placeholder="রুম" onKeyDown={e=>e.key==="Enter"&&addMember()} style={{...inp(),flex:1,fontSize:13}}/>
+              <button onClick={addMember} style={btn(C.primary)}>+ যোগ</button>
+            </div>
+            {sortedByRoom(members).map(m=>{
+              const cost=getMemberMonthCost(m.id);
+              const bal=getMemberBalance(m);
+              const meals=currentMonthDates.reduce((s,d)=>s+getMemberDailyMeals(m.id,d),0);
+              return(
+                <div key={m.id} style={card({border:`1px solid ${bal<0?C.danger:C.border}`})}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <span style={{background:`${C.accent}22`,color:C.accent,fontWeight:700,fontSize:12,padding:"2px 10px",borderRadius:20,border:`1px solid ${C.accent}44`}}>🏠 {m.room||"-"}</span>
+                      {editingMember===m.id?(
+                        <input defaultValue={m.name} autoFocus onBlur={e=>{setMembers(p=>p.map(x=>x.id===m.id?{...x,name:e.target.value}:x));setEditingMember(null);}} style={{background:C.surface,border:`1px solid ${C.primary}`,color:C.text,borderRadius:6,padding:"4px 10px",fontSize:13,fontFamily:"inherit",width:130}}/>
+                      ):(
+                        <span style={{fontSize:13,fontWeight:600,cursor:"pointer",color:C.text}} onClick={()=>setEditingMember(m.id)}>{m.name} <span style={{fontSize:10,color:C.muted}}>✏️</span></span>
+                      )}
+                    </div>
+                    <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                      <span style={{fontSize:12,fontWeight:700,color:bal>=0?C.success:C.danger,background:bal>=0?`${C.success}22`:`${C.danger}22`,padding:"2px 10px",borderRadius:20}}>{bal>=0?`+৳${Math.round(bal)}`:`-৳${Math.abs(Math.round(bal))}`}</span>
+                      <button onClick={()=>{if(window.confirm("মুছবেন?"))setMembers(p=>p.filter(x=>x.id!==m.id));}} style={{background:`${C.danger}22`,border:"none",borderRadius:6,padding:"2px 8px",color:C.danger,cursor:"pointer",fontSize:10}}>✕</button>
+                    </div>
+                  </div>
+                  {/* Default meal toggles */}
+                  <div style={{display:"flex",gap:5,marginBottom:8}}>
+                    {[["সকাল","morning",C.accent],["দুপুর","lunch",C.success],["রাত","dinner",C.secondary]].map(([label,key,color])=>(
+                      <button key={key} onClick={()=>toggleDefaultMeal(m.id,key)} style={{flex:1,padding:"5px 3px",borderRadius:8,border:`1px solid ${m.activeMeals[key]?color:C.border}`,background:m.activeMeals[key]?`${color}22`:"transparent",color:m.activeMeals[key]?color:C.muted,cursor:"pointer",fontSize:11,fontFamily:"inherit",fontWeight:600}}>
+                        {label} {m.activeMeals[key]?"✓":"✗"}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Stats row */}
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5,marginBottom:8}}>
+                    {[["খরচ",`৳${Math.round(cost)}`,C.danger],["মিল",`${meals.toFixed(1)}`,C.secondary],["জমা",`৳${m.deposit}`,C.accent],["বকেয়া",`৳${m.dueAmount||0}`,m.dueAmount>0?C.danger:C.muted]].map(([l,v,c])=>(
+                      <div key={l} style={{background:C.surface,borderRadius:8,padding:"6px 8px",textAlign:"center"}}>
+                        <div style={{fontSize:9,color:C.muted}}>{l}</div>
+                        <div style={{fontSize:12,fontWeight:700,color:c}}>{v}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Deposit input */}
+                  <div style={{display:"flex",gap:6,marginBottom:6}}>
+                    <input type="number" placeholder="জমা (৳)" value={depositInput[m.id]||""} onChange={e=>setDepositInput(p=>({...p,[m.id]:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addDeposit(m.id)} style={{...inp(),flex:1,padding:"7px 10px",fontSize:12}}/>
+                    <button onClick={()=>addDeposit(m.id)} style={{background:`${C.accent}22`,border:`1px solid ${C.accent}`,borderRadius:8,padding:"7px 14px",color:C.accent,cursor:"pointer",fontSize:11,fontFamily:"inherit",fontWeight:700}}>জমা দিন</button>
+                  </div>
+                  {/* Due input */}
+                  <div style={{display:"flex",gap:6}}>
+                    <input type="number" placeholder="বকেয়া যোগ (৳)" value={dueInput[m.id]||""} onChange={e=>setDueInput(p=>({...p,[m.id]:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addDue(m.id)} style={{...inp(),flex:1,padding:"7px 10px",fontSize:12,borderColor:`${C.danger}44`}}/>
+                    <button onClick={()=>addDue(m.id)} style={{background:`${C.danger}22`,border:`1px solid ${C.danger}`,borderRadius:8,padding:"7px 12px",color:C.danger,cursor:"pointer",fontSize:11,fontFamily:"inherit",fontWeight:700}}>বকেয়া +</button>
+                    {(m.dueAmount||0)>0&&<button onClick={()=>clearDue(m.id)} style={{background:`${C.success}22`,border:`1px solid ${C.success}`,borderRadius:8,padding:"7px 10px",color:C.success,cursor:"pointer",fontSize:10,fontFamily:"inherit"}}>পরিশোধ ✓</button>}
+                  </div>
+                  {/* History */}
+                  {(m.depositHistory||[]).length>0&&(
+                    <div style={{marginTop:8,paddingTop:6,borderTop:`1px solid ${C.border}`}}>
+                      <div style={{fontSize:10,color:C.muted,marginBottom:4}}>জমার ইতিহাস:</div>
+                      {[...(m.depositHistory||[])].reverse().slice(0,3).map((d,i)=>(
+                        <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:11,color:C.muted,paddingBottom:2}}>
+                          <span>{fmtDate(d.date)}</span><span style={{color:C.accent}}>৳{d.amount}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ══ GROCERY ══ */}
+        {tab==="grocery"&&(
+          <div>
+            <div style={card()}>
+              <div style={{fontSize:13,fontWeight:700,color:C.primary,marginBottom:10}}>➕ বাজার যোগ করুন</div>
+              <div style={{marginBottom:8}}>
+                <div style={{fontSize:10,color:C.muted,marginBottom:3}}>তারিখ</div>
+                <input type="date" value={grocDate} onChange={e=>setGrocDate(e.target.value)} style={inp()}/>
+              </div>
+              <div style={{display:"flex",gap:8,marginBottom:10}}>
+                <div style={{flex:2}}>
+                  <div style={{fontSize:10,color:C.muted,marginBottom:3}}>আইটেম</div>
+                  <input value={grocItem} onChange={e=>setGrocItem(e.target.value)} placeholder="পেঁয়াজ, তেল..." onKeyDown={e=>e.key==="Enter"&&addGrocery()} style={inp()}/>
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:10,color:C.muted,marginBottom:3}}>মূল্য (৳)</div>
+                  <input type="number" value={grocAmt} onChange={e=>setGrocAmt(e.target.value)} placeholder="০" onKeyDown={e=>e.key==="Enter"&&addGrocery()} style={inp()}/>
+                </div>
+              </div>
+              <button onClick={addGrocery} style={{...btn(C.success,{color:"#fff"}),width:"100%"}}>✓ বাজার যোগ করুন</button>
+            </div>
+            <div style={{background:C.surface,borderRadius:12,padding:14,border:`1px solid ${C.danger}33`,marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div><div style={{fontSize:10,color:C.muted}}>এই মাসে মোট বাজার</div><div style={{fontSize:24,fontWeight:700,color:C.danger}}>৳{Math.round(totalGroceriesThisMonth)}</div></div>
+              <div style={{textAlign:"right"}}><div style={{fontSize:10,color:C.muted}}>মিল রেট</div><div style={{fontSize:20,fontWeight:700,color:rs?.type==="high"?C.danger:rs?.type==="ok"?C.success:C.accent}}>৳{calculatedMealRate.toFixed(2)}</div></div>
+            </div>
+            {Object.entries(groceries).sort((a,b)=>b[0].localeCompare(a[0])).map(([date,items])=>(
+              <div key={date} style={card()}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+                  <span style={{fontSize:12,fontWeight:700,color:C.muted}}>{fmtDate(date)} {isSpecialDay(date)?"⭐":""}</span>
+                  <span style={{fontSize:12,fontWeight:700,color:C.danger}}>৳{items.reduce((s,i)=>s+i.amount,0)}</span>
+                </div>
+                {items.map(g=>(
+                  <div key={g.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:`1px solid ${C.border}`}}>
+                    <span style={{fontSize:13,color:C.text}}>{g.item}</span>
+                    <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                      <span style={{color:C.danger,fontWeight:600}}>৳{g.amount}</span>
+                      <button onClick={()=>removeGrocery(date,g.id)} style={{background:`${C.danger}22`,border:"none",borderRadius:5,padding:"2px 8px",color:C.danger,cursor:"pointer",fontSize:11}}>✕</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+            {allGroceries.length===0&&<div style={{color:C.muted,textAlign:"center",padding:40}}>কোনো বাজার নেই</div>}
+          </div>
+        )}
+
+        {/* ══ MARKET DAY ══ */}
+        {tab==="market_day"&&(
+          <div>
+            <div style={card()}>
+              <div style={{fontSize:13,fontWeight:700,color:C.accent,marginBottom:10}}>🧺 বাজারে যাওয়ার হাজিরা</div>
+              <div style={{marginBottom:10}}>
+                <div style={{fontSize:10,color:C.muted,marginBottom:3}}>তারিখ</div>
+                <input type="date" value={marketDayDate} onChange={e=>setMarketDayDate(e.target.value)} style={inp()}/>
+              </div>
+              <div style={{fontSize:11,color:C.muted,marginBottom:6}}>সদস্য রুম নম্বর অনুযায়ী সাজানো · কে বাজারে গেছেন ✓ বা যাননি ✗ দিন</div>
+              <div style={{background:C.surface,borderRadius:10,border:`1px solid ${C.border}`,overflow:"hidden"}}>
+                <div style={{display:"grid",gridTemplateColumns:"40px 1fr 1fr 70px",padding:"8px 12px",borderBottom:`1px solid ${C.border}`,fontSize:10,color:C.muted,fontWeight:700}}>
+                  <span>রুম</span><span>নাম</span><span>মিল চালু</span><span style={{textAlign:"center"}}>বাজার</span>
+                </div>
+                {sortedByRoom(members).map(m=>{
+                  const went=!!(marketDays[marketDayDate]?.[m.id]);
+                  const hasActiveMeals=m.activeMeals.morning||m.activeMeals.lunch||m.activeMeals.dinner;
+                  return(
+                    <div key={m.id} style={{display:"grid",gridTemplateColumns:"40px 1fr 1fr 70px",padding:"7px 12px",borderBottom:`1px solid ${C.border}`,alignItems:"center",background:went?`${C.success}08`:"transparent"}}>
+                      <span style={{fontSize:11,color:C.accent,fontWeight:700}}>{m.room}</span>
+                      <span style={{fontSize:12,fontWeight:600,color:C.text}}>{m.name}</span>
+                      <span style={{fontSize:10,color:C.muted}}>{hasActiveMeals?"সকাল/দুপুর/রাত":"—"}</span>
+                      <button onClick={()=>toggleMarketAttendance(m.id)} style={{padding:"5px 10px",borderRadius:20,border:`1px solid ${went?C.success:C.danger}`,background:went?`${C.success}22`:`${C.danger}18`,color:went?C.success:C.danger,cursor:"pointer",fontSize:13,fontFamily:"inherit",fontWeight:700,textAlign:"center"}}>
+                        {went?"✓ গেছেন":"✗ যাননি"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Summary */}
+              {marketDays[marketDayDate]&&(
+                <div style={{marginTop:10,padding:10,background:`${C.success}12`,borderRadius:8,border:`1px solid ${C.success}33`}}>
+                  <div style={{fontSize:12,color:C.success,fontWeight:700}}>
+                    ✓ বাজারে গেছেন: {Object.values(marketDays[marketDayDate]).filter(Boolean).length} জন
+                    {" · "}✗ যাননি: {members.length-Object.values(marketDays[marketDayDate]).filter(Boolean).length} জন
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* Market day history */}
+            <div style={card()}>
+              <div style={{fontSize:13,fontWeight:700,color:C.muted,marginBottom:10}}>📅 বাজার হাজিরার ইতিহাস</div>
+              {Object.entries(marketDays).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,10).map(([date,attendees])=>{
+                const count=Object.values(attendees).filter(Boolean).length;
+                const wentMembers=members.filter(m=>attendees[m.id]).sort((a,b)=>(parseInt(a.room)||0)-(parseInt(b.room)||0));
+                return(
+                  <div key={date} style={{padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                      <span style={{fontSize:12,fontWeight:700,color:C.text}}>{fmtDate(date)}</span>
+                      <span style={{fontSize:12,color:C.success,fontWeight:700}}>{count} জন বাজারে গেছেন</span>
+                    </div>
+                    <div style={{fontSize:11,color:C.muted}}>{wentMembers.map(m=>`রুম${m.room}`).join(", ")||"কেউ না"}</div>
+                  </div>
+                );
+              })}
+              {Object.keys(marketDays).length===0&&<div style={{color:C.muted,textAlign:"center",padding:20}}>কোনো রেকর্ড নেই</div>}
+            </div>
+          </div>
+        )}
+
+        {/* ══ COOKING LOG ══ */}
+        {tab==="cooking"&&(
+          <div>
+            <div style={card()}>
+              <div style={{fontSize:13,fontWeight:700,color:"#a78bfa",marginBottom:10}}>🥘 রান্না লগ যোগ করুন</div>
+              <div style={{marginBottom:8}}>
+                <div style={{fontSize:10,color:C.muted,marginBottom:3}}>তারিখ</div>
+                <input type="date" value={cookDate} onChange={e=>setCookDate(e.target.value)} style={inp()}/>
+              </div>
+              <div style={{display:"flex",gap:8,marginBottom:8}}>
+                <div style={{flex:2}}>
+                  <div style={{fontSize:10,color:C.muted,marginBottom:3}}>রান্নার আইটেম</div>
+                  <input value={cookItem} onChange={e=>setCookItem(e.target.value)} placeholder="ভাত, মাছের তরকারি..." onKeyDown={e=>e.key==="Enter"&&addCookingEntry()} style={inp()}/>
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:10,color:C.muted,marginBottom:3}}>নোট (ঐচ্ছিক)</div>
+                  <input value={cookNote} onChange={e=>setCookNote(e.target.value)} placeholder="বিশেষ কিছু" style={inp()}/>
+                </div>
+              </div>
+              <button onClick={addCookingEntry} style={{...btn("#a78bfa",{color:"#fff"}),width:"100%"}}>✓ রান্না লগ যোগ</button>
+            </div>
+            {Object.entries(cookingLog).sort((a,b)=>b[0].localeCompare(a[0])).map(([date,entries])=>(
+              <div key={date} style={card({border:"1px solid #a78bfa33"})}>
+                <div style={{fontSize:12,fontWeight:700,color:"#a78bfa",marginBottom:8}}>🥘 {fmtDate(date)} {isSpecialDay(date)?"⭐":""}</div>
+                {entries.map(e=>(
+                  <div key={e.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:`1px solid ${C.border}`}}>
+                    <span style={{fontSize:13,color:C.text}}>• {e.item}{e.note&&<span style={{color:C.muted,fontSize:11}}> — {e.note}</span>}</span>
+                    <button onClick={()=>removeCookingEntry(date,e.id)} style={{background:`${C.danger}22`,border:"none",borderRadius:5,padding:"2px 8px",color:C.danger,cursor:"pointer",fontSize:11}}>✕</button>
+                  </div>
+                ))}
+              </div>
+            ))}
+            {Object.keys(cookingLog).length===0&&<div style={{color:C.muted,textAlign:"center",padding:40}}>কোনো রান্না লগ নেই</div>}
+          </div>
+        )}
+
+        {/* ══ INVENTORY ══ */}
+        {tab==="inventory"&&(
+          <div>
+            <button onClick={()=>setShowAddInvForm(f=>!f)} style={{...btn(C.primary),width:"100%",marginBottom:10}}>
+              {showAddInvForm?"✕ বাতিল":"➕ নতুন আইটেম যোগ করুন"}
+            </button>
+            {showAddInvForm&&(
+              <div style={card()}>
+                <div style={{display:"flex",gap:8,marginBottom:8}}>
+                  <div style={{flex:2}}><div style={{fontSize:10,color:C.muted,marginBottom:3}}>নাম</div><input value={invName} onChange={e=>setInvName(e.target.value)} placeholder="চাল, তেল..." style={inp()}/></div>
+                  <div style={{flex:1}}><div style={{fontSize:10,color:C.muted,marginBottom:3}}>একক</div><input value={invUnit} onChange={e=>setInvUnit(e.target.value)} placeholder="কেজি" style={inp()}/></div>
+                </div>
+                <div style={{display:"flex",gap:8,marginBottom:10}}>
+                  <div style={{flex:1}}><div style={{fontSize:10,color:C.muted,marginBottom:3}}>পরিমাণ</div><input type="number" value={invQty} onChange={e=>setInvQty(e.target.value)} placeholder="০" style={inp()}/></div>
+                  <div style={{flex:1}}><div style={{fontSize:10,color:C.muted,marginBottom:3}}>সতর্কতা সীমা</div><input type="number" value={invMin} onChange={e=>setInvMin(e.target.value)} placeholder="সর্বনিম্ন" style={inp()}/></div>
+                </div>
+                <button onClick={addInventoryItem} style={{...btn(C.success,{color:"#fff"}),width:"100%"}}>✓ যোগ করুন</button>
+              </div>
+            )}
+            {inventory.map(item=>{
+              const isLow=item.quantity<=item.minAlert&&item.minAlert>0;
+              const pct=item.minAlert>0?Math.min(100,(item.quantity/(item.minAlert*3))*100):50;
+              return(
+                <div key={item.id} style={card({border:`1px solid ${isLow?C.danger:C.border}`})}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                    <div><div style={{fontSize:13,fontWeight:700,color:isLow?C.danger:C.text}}>{item.name} {isLow?"⚠️":""}</div><div style={{fontSize:10,color:C.muted}}>সতর্কতা: {item.minAlert} {item.unit} এর নিচে</div></div>
+                    <div style={{textAlign:"right"}}>
+                      {invAdjId===item.id?null:<>
+                        <div style={{fontSize:22,fontWeight:700,color:isLow?C.danger:C.success}}>{item.quantity}</div>
+                        <div style={{fontSize:10,color:C.muted}}>{item.unit}</div>
+                      </>}
+                    </div>
+                  </div>
+                  <div style={{height:5,background:C.surface,borderRadius:3,marginBottom:10,overflow:"hidden"}}>
+                    <div style={{height:"100%",width:`${pct}%`,background:isLow?C.danger:C.success,borderRadius:3}}/>
+                  </div>
+                  {invAdjId===item.id?(
+                    <div>
+                      <div style={{display:"flex",gap:6,marginBottom:8}}>
+                        {[["set","📝 সরাসরি লিখুন",C.primary],["add","+ যোগ",C.success],["remove","- বিয়োগ",C.danger]].map(([t,l,c])=>(
+                          <button key={t} onClick={()=>setInvAdjType(t)} style={{flex:1,padding:"7px 4px",borderRadius:8,border:`1px solid ${invAdjType===t?c:C.border}`,background:invAdjType===t?`${c}22`:"transparent",color:invAdjType===t?c:C.muted,cursor:"pointer",fontSize:11,fontFamily:"inherit"}}>{l}</button>
+                        ))}
+                      </div>
+                      <div style={{fontSize:10,color:C.muted,marginBottom:4}}>
+                        {invAdjType==="set"?"নতুন পরিমাণ লিখুন":invAdjType==="add"?"কতটুকু যোগ হলো":"কতটুকু ব্যবহার হলো"}
+                      </div>
+                      <div style={{display:"flex",gap:8}}>
+                        <input type="number" value={invAdjAmt} onChange={e=>setInvAdjAmt(e.target.value)} placeholder={invAdjType==="set"?`বর্তমান: ${item.quantity}`:"পরিমাণ"} style={{...inp(),flex:1}} onKeyDown={e=>e.key==="Enter"&&adjustInventory(item.id)}/>
+                        <button onClick={()=>adjustInventory(item.id)} style={btn(C.success,{color:"#fff"})}>✓</button>
+                        <button onClick={()=>{setInvAdjId(null);setInvAdjAmt("");setInvAdjType("set");}} style={{background:`${C.danger}22`,border:"none",borderRadius:8,padding:"10px 14px",color:C.danger,cursor:"pointer"}}>✕</button>
+                      </div>
+                    </div>
+                  ):(
+                    <div style={{display:"flex",gap:8}}>
+                      <button onClick={()=>{setInvAdjId(item.id);setInvAdjAmt("");setInvAdjType("set");}} style={{...outlineBtn(C.primary),flex:1}}>✏️ আপডেট</button>
+                      <button onClick={()=>{if(window.confirm("মুছবেন?"))setInventory(prev=>prev.filter(i=>i.id!==item.id));}} style={{background:`${C.danger}22`,border:"none",borderRadius:8,padding:"7px 12px",color:C.danger,cursor:"pointer",fontSize:11}}>🗑️</button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ══ RECEIPTS ══ */}
+        {tab==="receipts"&&(
+          <div>
+            {(!tgToken||!tgChatId)&&(
+              <div style={{background:`${C.warn}18`,border:`1px solid ${C.warn}44`,borderRadius:12,padding:12,marginBottom:12,display:"flex",gap:10,alignItems:"center"}}>
+                <div style={{fontSize:18}}>📱</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:12,fontWeight:700,color:C.warn}}>Telegram Chat ID সেট করুন</div>
+                  <div style={{fontSize:10,color:C.muted,marginTop:2}}>Token সেট আছে কিন্তু Chat ID দরকার। সেটিং → Telegram-এ দিন।</div>
+                  <button onClick={()=>{setTab("settings");setSettingsTab("telegram");}} style={{...outlineBtn(C.warn),marginTop:6,fontSize:10}}>⚙️ সেটআপ</button>
+                </div>
+              </div>
+            )}
+            {tgToken&&tgChatId&&(
+              <div style={{background:`${C.success}18`,border:`1px solid ${C.success}44`,borderRadius:12,padding:10,marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:14}}>✅</span>
+                <span style={{fontSize:11,color:C.success,fontWeight:600}}>Telegram Bot সংযুক্ত — রশিদ ছবি স্বয়ংক্রিয়ভাবে পাঠানো হবে</span>
+              </div>
+            )}
+            <div style={card()}>
+              <div style={{fontSize:13,fontWeight:700,color:C.primary,marginBottom:10}}>🧾 রশিদ সেভ করুন</div>
+              <div style={{marginBottom:8}}><div style={{fontSize:10,color:C.muted,marginBottom:3}}>তারিখ</div><input type="date" value={receiptDate} onChange={e=>setReceiptDate(e.target.value)} style={inp()}/></div>
+              <div style={{marginBottom:10}}><div style={{fontSize:10,color:C.muted,marginBottom:3}}>নোট</div><input value={receiptNote} onChange={e=>setReceiptNote(e.target.value)} placeholder="সাপ্তাহিক বাজার..." style={inp()}/></div>
+              <input type="file" ref={receiptInputRef} accept="image/*" onChange={handleReceiptUpload} style={{display:"none"}}/>
+              <button onClick={()=>receiptInputRef.current.click()} disabled={tgSending} style={{...btn(C.primary),width:"100%"}}>
+                {tgSending?"📱 টেলিগ্রামে পাঠানো হচ্ছে...":"📷 ছবি আপলোড করুন"}
+              </button>
+              <div style={{fontSize:10,color:C.muted,marginTop:6}}>💡 ক্যামেরা বা গ্যালারি থেকে ছবি বাছুন। Telegram সেটআপ থাকলে স্বয়ংক্রিয়ভাবে পাঠাবে।</div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+              {[...receipts].sort((a,b)=>b.date.localeCompare(a.date)).map(r=>(
+                <div key={r.id} onClick={()=>setViewReceipt(r)} style={{background:C.card,borderRadius:12,border:`1px solid ${C.border}`,overflow:"hidden",cursor:"pointer"}}>
+                  <img src={r.image} alt="receipt" style={{width:"100%",height:130,objectFit:"cover"}}/>
+                  <div style={{padding:"8px 10px"}}>
+                    <div style={{fontSize:11,fontWeight:700,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.note}</div>
+                    <div style={{fontSize:10,color:C.muted,marginTop:1}}>{fmtDate(r.date)}</div>
+                  </div>
+                </div>
+              ))}
+              {receipts.length===0&&<div style={{gridColumn:"1/-1",textAlign:"center",color:C.muted,padding:40}}><div style={{fontSize:32,marginBottom:8}}>🧾</div>এখনো কোনো রশিদ নেই</div>}
+            </div>
+          </div>
+        )}
+
+        {/* ══ SPECIAL ══ */}
+        {tab==="special"&&(
+          <div>
+            <div style={card()}>
+              <div style={{fontSize:13,fontWeight:700,color:C.accent,marginBottom:10}}>⭐ বিশেষ মিল রেকর্ড করুন</div>
+              <div style={{marginBottom:8}}><div style={{fontSize:10,color:C.muted,marginBottom:3}}>তারিখ</div><input type="date" value={sdDate} onChange={e=>setSdDate(e.target.value)} style={inp()}/></div>
+              <div style={{display:"flex",gap:8,marginBottom:8}}>
+                <div style={{flex:1}}><div style={{fontSize:10,color:C.muted,marginBottom:3}}>রুম নং</div><input value={sdRoom} onChange={e=>setSdRoom(e.target.value)} placeholder="রুম" style={inp()}/></div>
+                <div style={{flex:1}}><div style={{fontSize:10,color:C.muted,marginBottom:3}}>মিল সংখ্যা</div><input type="number" value={sdCount} onChange={e=>setSdCount(e.target.value)} placeholder="কতটি" style={inp()}/></div>
+              </div>
+              <div style={{marginBottom:10}}><div style={{fontSize:10,color:C.muted,marginBottom:3}}>সংগ্রহকারী</div><input value={sdCollector} onChange={e=>setSdCollector(e.target.value)} placeholder="নাম বা রুম" style={inp()}/></div>
+              <button onClick={addSpecialDistrib} style={{...btn(C.accent),width:"100%"}}>✓ রেকর্ড করুন</button>
+            </div>
+            {specialDatesThisMonth.map(date=>{
+              const entries=specialDistrib[date]||[];
+              const totalMls=entries.reduce((s,e)=>s+e.count,0);
+              const activeOnDate=members.filter(m=>getMemberMealsOnDate(m.id,date).lunch).length;
+              return(
+                <div key={date} style={card({border:`1px solid ${C.accent}33`})}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                    <div><div style={{fontSize:12,fontWeight:700,color:C.accent}}>⭐ {fmtDate(date)} ({DAYS_BN[new Date(date+"T00:00:00").getDay()]}বার)</div><div style={{fontSize:10,color:C.muted}}>মিলে ছিল: {activeOnDate}জন</div></div>
+                    <div style={{textAlign:"right"}}><div style={{fontSize:10,color:C.muted}}>বিতরণ</div><div style={{fontSize:18,fontWeight:700,color:totalMls===activeOnDate?C.success:totalMls<activeOnDate?C.warn:C.danger}}>{totalMls}/{activeOnDate}</div></div>
+                  </div>
+                  {entries.map(e=>(
+                    <div key={e.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
+                      <span style={{fontWeight:700,color:C.accent,fontSize:12}}>🏠{e.room}</span>
+                      <span style={{fontSize:11,color:C.text}}>{e.collectedBy}</span>
+                      <span style={{fontWeight:700,color:C.success}}>{e.count}টি</span>
+                      <span style={{fontSize:10,color:C.muted}}>{e.time}</span>
+                      <button onClick={()=>setSpecialDistrib(prev=>({...prev,[date]:(prev[date]||[]).filter(x=>x.id!==e.id)}))} style={{background:`${C.danger}22`,border:"none",borderRadius:5,padding:"2px 8px",color:C.danger,cursor:"pointer",fontSize:11}}>✕</button>
+                    </div>
+                  ))}
+                  {entries.length===0&&<div style={{color:C.muted,fontSize:11,textAlign:"center",padding:8}}>কোনো রেকর্ড নেই</div>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ══ ACCOUNTS ══ */}
+        {tab==="accounts"&&(
+          <div>
+            <div style={card()}>
+              <div style={{fontSize:13,fontWeight:700,color:C.primary,marginBottom:12}}>💰 সদস্যভিত্তিক হিসাব</div>
+              {sortedByRoom(members).map(m=>{
+                const cost=getMemberMonthCost(m.id);
+                const bal=getMemberBalance(m);
+                const meals=currentMonthDates.reduce((s,d)=>s+getMemberDailyMeals(m.id,d),0);
+                return(
+                  <div key={m.id} style={{padding:"10px 0",borderBottom:`1px solid ${C.border}`}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                      <div><span style={{fontWeight:700,color:C.text,fontSize:13}}>{m.name}</span><span style={{fontSize:10,color:C.muted,marginLeft:6}}>রুম {m.room}</span></div>
+                      <span style={{fontSize:13,fontWeight:700,color:bal>=0?C.success:C.danger}}>{bal>=0?`+৳${Math.round(bal)}`:`বকেয়া ৳${Math.abs(Math.round(bal))}`}</span>
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5}}>
+                      {[["মিল",`${meals.toFixed(1)}`,C.secondary],["খরচ",`৳${Math.round(cost)}`,C.danger],["জমা",`৳${m.deposit}`,C.accent],["বকেয়া",`৳${m.dueAmount||0}`,m.dueAmount>0?C.danger:C.muted]].map(([l,v,c])=>(
+                        <div key={l} style={{background:C.surface,borderRadius:8,padding:"6px",textAlign:"center"}}>
+                          <div style={{fontSize:9,color:C.muted}}>{l}</div>
+                          <div style={{fontSize:12,fontWeight:700,color:c}}>{v}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Monthly summary */}
+            <div style={card()}>
+              <div style={{fontSize:13,fontWeight:700,color:C.primary,marginBottom:10}}>📋 মাসিক সারসংক্ষেপ</div>
+              {[["মোট সদস্য",`${members.length}জন`,C.text],["মিল রেট",`৳${calculatedMealRate.toFixed(2)}/মিল`,rs?.type==="high"?C.danger:rs?.type==="ok"?C.success:C.accent],["মোট মিল",totalMealsThisMonth.toFixed(1),C.secondary],["বাজার",`৳${Math.round(totalGroceriesThisMonth)}`,C.danger],["সর্বমোট",`৳${Math.round(totalCostThisMonth)}`,C.accent],["মোট জমা",`৳${Math.round(totalDeposit)}`,C.primary],["মোট বকেয়া",`৳${totalDue}`,totalDue>0?C.danger:C.muted],["হাতে আছে",`৳${Math.round(cashInHand)}`,cashInHand>=0?C.primary:C.danger]].map(([l,v,c])=>(
+                <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${C.border}`,fontSize:13}}>
+                  <span style={{color:C.muted}}>{l}</span><span style={{fontWeight:700,color:c}}>{v}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ══ SETTINGS ══ */}
+        {tab==="settings"&&(
+          <div>
+            <div style={{display:"flex",gap:5,marginBottom:12,overflowX:"auto"}}>
+              {[["general","সাধারণ"],["meal","মিল"],["telegram","📱 Telegram"],["ai","🤖 AI"],["data","💾 ডেটা"]].map(([id,label])=>(
+                <button key={id} onClick={()=>setSettingsTab(id)} style={{flex:"0 0 auto",padding:"7px 14px",borderRadius:20,border:`1px solid ${settingsTab===id?C.primary:C.border}`,background:settingsTab===id?`${C.primary}22`:"transparent",color:settingsTab===id?C.primary:C.muted,cursor:"pointer",fontSize:11,fontFamily:"inherit",whiteSpace:"nowrap"}}>{label}</button>
+              ))}
+            </div>
+
+            {settingsTab==="general"&&(
+              <div style={card()}>
+                <div style={{fontSize:13,fontWeight:700,color:C.primary,marginBottom:12}}>⚙️ সাধারণ সেটিং</div>
+                <div style={{marginBottom:10}}>
+                  <div style={{fontSize:11,color:C.muted,marginBottom:4}}>বিশেষ দিন (সাপ্তাহিক)</div>
+                  <select value={specialWeekday} onChange={e=>setSpecialWeekday(parseInt(e.target.value))} style={inp()}>
+                    {DAYS_BN.map((d,i)=><option key={i} value={i}>{d}বার</option>)}
+                  </select>
+                  <div style={{fontSize:11,color:C.muted,marginTop:6,padding:"8px 12px",background:C.surface,borderRadius:8}}>বিশেষ দিনে দুপুর = {SPECIAL_LUNCH} ইউনিট</div>
+                </div>
+              </div>
+            )}
+
+            {settingsTab==="meal"&&(
+              <div style={card()}>
+                <div style={{fontSize:13,fontWeight:700,color:C.primary,marginBottom:12}}>🍽️ মিল রেট সেটিং</div>
+                <div style={{marginBottom:10}}><div style={{fontSize:11,color:C.muted,marginBottom:4}}>মিল রেট (৳/ইউনিট)</div><input type="number" value={rateInput} onChange={e=>setRateInput(parseFloat(e.target.value)||0)} style={inp()}/></div>
+                <button onClick={()=>{setMealRate(rateInput);notify("মিল রেট আপডেট হয়েছে");}} style={{...btn(C.primary),width:"100%"}}>✓ সেভ করুন</button>
+                <div style={{marginTop:10,fontSize:11,color:C.muted,padding:10,background:C.surface,borderRadius:8,lineHeight:1.7}}>
+                  সকাল = 0.5 ইউনিট · দুপুর = 1.0 ইউনিট · রাত = 1.0 ইউনিট<br/>বিশেষ দিনে দুপুর = {SPECIAL_LUNCH} ইউনিট<br/>লক্ষ্য রেট: ৳{RATE_MIN}–৳{RATE_MAX}
+                </div>
+              </div>
+            )}
+
+            {settingsTab==="telegram"&&(
+              <div>
+                <div style={card({border:`1px solid ${C.secondary}33`})}>
+                  <div style={{fontSize:13,fontWeight:700,color:C.secondary,marginBottom:6}}>📱 Telegram Bot সেটআপ</div>
+                  <div style={{fontSize:11,color:C.muted,marginBottom:12,lineHeight:1.7,background:C.surface,padding:10,borderRadius:8}}>
+                    ১. @BotFather → /newbot → Bot Token নিন<br/>
+                    ২. Bot-কে গ্রুপে যোগ করুন বা সরাসরি মেসেজ করুন<br/>
+                    ৩. @userinfobot থেকে Chat ID নিন<br/>
+                    ৪. নিচে Token ও Chat ID দিন ✓<br/>
+                    <span style={{color:C.success}}>✅ Token pre-filled আছে — শুধু Chat ID দিন</span>
+                  </div>
+                  <div style={{marginBottom:10}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
+                      <div style={{fontSize:11,color:C.muted}}>🔑 Bot Token</div>
+                      <button onClick={()=>setShowTgKeys(p=>!p)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:11}}>{showTgKeys?"🙈":"👁️"}</button>
+                    </div>
+                    <input type={showTgKeys?"text":"password"} value={tgToken} onChange={e=>setTgToken(e.target.value)} placeholder="123456789:AABBcc..." style={inp()}/>
+                  </div>
+                  <div style={{marginBottom:12}}>
+                    <div style={{fontSize:11,color:C.muted,marginBottom:3}}>💬 Chat ID</div>
+                    <input type="text" value={tgChatId} onChange={e=>setTgChatId(e.target.value)} placeholder="-1001234567890 বা 987654321" style={inp()}/>
+                    <div style={{fontSize:10,color:C.muted,marginTop:4}}>@userinfobot থেকে পান · গ্রুপে হলে − দিয়ে শুরু</div>
+                  </div>
+                  {tgToken&&tgChatId?(
+                    <div style={{fontSize:11,color:C.success,padding:"8px 12px",background:`${C.success}18`,borderRadius:8}}>✅ Telegram Bot সংযুক্ত!</div>
+                  ):(
+                    <div style={{fontSize:11,color:C.muted,padding:"8px 12px",background:C.surface,borderRadius:8}}>⚪ Chat ID দিলেই রশিদ পাঠানো যাবে</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {settingsTab==="ai"&&(
+              <div>
+                <div style={card()}>
+                  <div style={{fontSize:13,fontWeight:700,color:C.primary,marginBottom:10}}>🤖 AI প্রদানকারী</div>
+                  {[["gemini","✨ Gemini (Google)","বিনামূল্যে","#a78bfa"],["openai","💬 ChatGPT (OpenAI)","পেইড",C.success],["claude","🤖 Claude (Anthropic)","ডিফল্ট",C.primary]].map(([val,label,badge,color])=>(
+                    <button key={val} onClick={()=>setAiProvider(val)} style={{width:"100%",padding:"10px 12px",borderRadius:10,border:`2px solid ${aiProvider===val?color:C.border}`,background:aiProvider===val?`${color}18`:C.surface,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+                      <div style={{fontSize:16}}>{label.split(" ")[0]}</div>
+                      <div style={{flex:1,textAlign:"left"}}><div style={{fontSize:12,fontWeight:700,color:aiProvider===val?color:C.text}}>{label.slice(label.indexOf(" ")+1)}</div></div>
+                      <div style={{fontSize:9,color:C.muted,background:C.surface,padding:"2px 8px",borderRadius:10,border:`1px solid ${C.border}`}}>{badge}</div>
+                      {aiProvider===val&&<div style={{fontSize:10,color:color,fontWeight:700}}>✓</div>}
+                    </button>
+                  ))}
+                </div>
+                <div style={card()}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}>
+                    <div style={{fontSize:13,fontWeight:700,color:C.primary}}>🔑 API Keys</div>
+                    <button onClick={()=>setShowKeys(p=>!p)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:11,fontFamily:"inherit"}}>{showKeys?"🙈 লুকান":"👁️ দেখুন"}</button>
+                  </div>
+                  <div style={{marginBottom:10}}>
+                    <div style={{fontSize:11,color:C.muted,marginBottom:3}}>✨ Gemini API Key</div>
+                    <input type={showKeys?"text":"password"} value={geminiKey} onChange={e=>setGeminiKey(e.target.value)} placeholder="AIza..." style={inp()}/>
+                    <div style={{fontSize:10,color:geminiKey?C.success:C.muted,marginTop:3}}>{geminiKey?"✅ সেট করা আছে":"aistudio.google.com/apikey থেকে নিন (বিনামূল্যে)"}</div>
+                  </div>
+                  <div style={{marginBottom:10}}>
+                    <div style={{fontSize:11,color:C.muted,marginBottom:3}}>💬 OpenAI API Key</div>
+                    <input type={showKeys?"text":"password"} value={openaiKey} onChange={e=>setOpenaiKey(e.target.value)} placeholder="sk-..." style={inp()}/>
+                    <div style={{fontSize:10,color:openaiKey?C.success:C.muted,marginTop:3}}>{openaiKey?"✅ সেট করা আছে":"platform.openai.com/api-keys থেকে নিন"}</div>
+                  </div>
+                  <div style={{fontSize:11,color:C.success,padding:"8px 12px",background:`${C.success}12`,borderRadius:8}}>✅ সব API Key pre-filled আছে। Gemini বিনামূল্যে কাজ করবে।</div>
+                </div>
+              </div>
+            )}
+
+            {settingsTab==="data"&&(
+              <div>
+                <div style={card({border:`1px solid ${C.primary}33`})}>
+                  <div style={{fontSize:13,fontWeight:700,color:C.primary,marginBottom:6}}>💾 ব্যাকআপ</div>
+                  <div style={{fontSize:11,color:C.muted,marginBottom:10}}>সব হিসাব JSON ফাইলে সেভ করুন।</div>
+                  <button onClick={()=>{
+                    const state={members,dailyRecords,groceries,mealRate,specialWeekday,specialDistrib,inventory,receipts,guestMeals,cashAdjustment,prevManagerAmount,prevManagerNote,marketDays,cookingLog,exportDate:new Date().toISOString()};
+                    const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+                    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`meal-backup-${new Date().toISOString().split("T")[0]}.json`;a.click();
+                    notify("✅ ব্যাকআপ ডাউনলোড হয়েছে!");
+                  }} style={{...btn(C.primary),width:"100%",marginBottom:8}}>📥 ব্যাকআপ ডাউনলোড (.json)</button>
+                </div>
+                <div style={card({border:`1px solid ${C.accent}33`})}>
+                  <div style={{fontSize:13,fontWeight:700,color:C.accent,marginBottom:6}}>📤 রিস্টোর</div>
+                  <div style={{fontSize:11,color:C.muted,marginBottom:10}}>⚠️ বর্তমান ডেটা মুছে যাবে।</div>
+                  <input type="file" accept=".json" style={{display:"none"}} id="restoreInput" onChange={(e)=>{
+                    const file=e.target.files?.[0];if(!file)return;
+                    const reader=new FileReader();
+                    reader.onload=(ev)=>{
+                      try{
+                        const data=JSON.parse(ev.target.result);
+                        if(!window.confirm("বর্তমান সব ডেটা মুছে রিস্টোর করবেন?"))return;
+                        if(data.members)setMembers(data.members);
+                        if(data.dailyRecords)setDailyRecords(data.dailyRecords);
+                        if(data.groceries)setGroceries(data.groceries);
+                        if(data.mealRate!==undefined)setMealRate(data.mealRate);
+                        if(data.specialWeekday!==undefined)setSpecialWeekday(data.specialWeekday);
+                        if(data.specialDistrib)setSpecialDistrib(data.specialDistrib);
+                        if(data.inventory)setInventory(data.inventory);
+                        if(data.receipts)setReceipts(data.receipts);
+                        if(data.guestMeals)setGuestMeals(data.guestMeals);
+                        if(data.cashAdjustment!==undefined)setCashAdjustment(data.cashAdjustment);
+                        if(data.prevManagerAmount!==undefined)setPrevManagerAmount(data.prevManagerAmount);
+                        if(data.prevManagerNote)setPrevManagerNote(data.prevManagerNote);
+                        if(data.marketDays)setMarketDays(data.marketDays);
+                        if(data.cookingLog)setCookingLog(data.cookingLog);
+                        notify("✅ রিস্টোর সম্পন্ন!");
+                      }catch{notify("⚠️ ফাইল পড়তে সমস্যা!","error");}
+                    };
+                    reader.readAsText(file);e.target.value="";
+                  }}/>
+                  <button onClick={()=>document.getElementById("restoreInput").click()} style={{...btn(C.accent),width:"100%"}}>📂 ব্যাকআপ ফাইল বাছুন</button>
+                </div>
+                <div style={card({border:`1px solid ${C.danger}33`})}>
+                  <div style={{fontSize:13,fontWeight:700,color:C.danger,marginBottom:6}}>🗑️ সব ডেটা মুছুন</div>
+                  <button onClick={()=>{if(!window.confirm("সত্যিই সব ডেটা মুছবেন?"))return;localStorage.removeItem("meal_mgr_v4");window.location.reload();}} style={{...btn(C.danger,{color:"#fff"}),width:"100%"}}>⚠️ রিসেট করুন</button>
+                </div>
+                <div style={card()}>
+                  <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:6}}>📱 ফোনে ইনস্টল</div>
+                  <div style={{fontSize:11,color:C.muted,lineHeight:1.8}}>
+                    <strong style={{color:C.text}}>Android (Chrome):</strong> মেনু → "Add to Home screen"<br/>
+                    <strong style={{color:C.text}}>iPhone (Safari):</strong> Share → "Add to Home Screen" → Add<br/>
+                    <span style={{color:C.success}}>✅ ইনস্টল করলে ইন্টারনেট ছাড়াও চলবে!</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── CHATBOT FAB ── */}
+      <button onClick={()=>setChatOpen(o=>!o)} style={{position:"fixed",bottom:22,right:18,width:56,height:56,borderRadius:"50%",border:"none",background:chatOpen?"#ef4444":`linear-gradient(135deg,${C.primary},${C.secondary})`,color:chatOpen?"#fff":"#050d0f",fontSize:22,cursor:"pointer",boxShadow:"0 4px 24px #0009",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center"}}>
+        {chatOpen?"✕":"🤖"}
+      </button>
+
+      {/* ── CHATBOT PANEL ── */}
+      {chatOpen&&(
+        <div style={{position:"fixed",bottom:88,right:12,width:Math.min(400,window.innerWidth-24),height:520,background:C.card,borderRadius:16,border:`1px solid ${C.borderHi}`,boxShadow:"0 8px 48px #000d",zIndex:999,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          <div style={{padding:"10px 14px",background:`linear-gradient(135deg,${C.surface},${C.card})`,borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",gap:8}}>
+            <div style={{fontSize:18}}>🤖</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:12,fontWeight:700,color:C.primary}}>AI সহকারী</div>
+              <div style={{fontSize:9,color:C.muted}}>{aiProvider==="gemini"?"✨ Gemini":aiProvider==="openai"?"💬 ChatGPT":"🤖 Claude"} · সব ভাষায় বলুন</div>
+            </div>
+          </div>
+          <div style={{flex:1,overflowY:"auto",padding:"10px 12px",display:"flex",flexDirection:"column",gap:8}}>
+            {chatMessages.map((msg,i)=>(
+              <div key={i} style={{display:"flex",justifyContent:msg.role==="user"?"flex-end":"flex-start"}}>
+                <div style={{maxWidth:"88%",padding:"9px 13px",borderRadius:msg.role==="user"?"14px 14px 4px 14px":"14px 14px 14px 4px",background:msg.role==="user"?`linear-gradient(135deg,${C.primary},${C.secondary})`:C.surface,color:msg.role==="user"?"#050d0f":C.text,fontSize:12,lineHeight:1.65,border:msg.role==="assistant"?`1px solid ${C.border}`:"none",whiteSpace:"pre-wrap"}}>{msg.text}</div>
+              </div>
+            ))}
+            {chatLoading&&<div style={{display:"flex",justifyContent:"flex-start"}}><div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:"14px 14px 14px 4px",padding:"9px 14px",fontSize:12,color:C.muted}}>⏳ ভাবছি...</div></div>}
+            <div ref={chatEndRef}/>
+          </div>
+          {/* Quick suggestions */}
+          <div style={{padding:"5px 8px 3px",display:"flex",gap:4,overflowX:"auto",borderTop:`1px solid ${C.border}`}}>
+            {["তেল ৫ লিটার কিনলাম","কার কত বকেয়া?","মিল রেট কত?","হাতে কত টাকা?","সবার হিসাব দাও"].map(q=>(
+              <button key={q} onClick={()=>setChatInput(q)} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:20,padding:"3px 10px",color:C.muted,cursor:"pointer",fontSize:10,fontFamily:"inherit",whiteSpace:"nowrap"}}>{q}</button>
+            ))}
+          </div>
+          <div style={{padding:"8px 10px",borderTop:`1px solid ${C.border}`,display:"flex",gap:6}}>
+            <input value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendChat()} placeholder="যেকোনো ভাষায় লিখুন..." disabled={chatLoading} style={{flex:1,background:C.surface,border:`1px solid ${C.border}`,color:C.text,borderRadius:10,padding:"8px 12px",fontSize:12,fontFamily:"inherit"}}/>
+            <button onClick={sendChat} disabled={chatLoading||!chatInput.trim()} style={{background:chatLoading||!chatInput.trim()?C.border:`linear-gradient(135deg,${C.primary},${C.secondary})`,border:"none",borderRadius:10,padding:"8px 12px",color:chatLoading||!chatInput.trim()?C.muted:"#050d0f",cursor:chatLoading?"not-allowed":"pointer",fontSize:16,fontWeight:700}}>➤</button>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes slideIn{from{transform:translateX(-50%) translateY(-20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+        input:focus,select:focus{outline:none;border-color:${C.primary}!important;box-shadow:0 0 0 2px ${C.glow};}
+        button:active{transform:scale(0.97);}
+        ::-webkit-scrollbar{width:4px;height:4px;}
+        ::-webkit-scrollbar-track{background:${C.bg};}
+        ::-webkit-scrollbar-thumb{background:${C.border};border-radius:2px;}
+        select option{background:${C.surface};color:${C.text};}
+      `}</style>
+    </div>
+  );
+}
+
+// ══ localStorage persistence ══
+const STORAGE_KEY="meal_mgr_v4";
+function AppWithStorage(){
+  const[loaded,setLoaded]=React.useState(false);
+  const[savedState,setSavedState]=React.useState(null);
+  React.useEffect(()=>{
+    try{const raw=localStorage.getItem(STORAGE_KEY);if(raw)setSavedState(JSON.parse(raw));}catch{}
+    setLoaded(true);
+  },[]);
+  if(!loaded)return(
+    <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:"#060d0f",color:"#00c9a7",fontFamily:"Hind Siliguri",flexDirection:"column",gap:14}}>
+      <div style={{fontSize:40}}>🏠</div>
+      <div style={{fontSize:18,fontWeight:700}}>মিল ম্যানেজার Pro</div>
+      <div style={{fontSize:12,color:"#4a6572"}}>লোড হচ্ছে...</div>
+    </div>
+  );
+  return<MealManagerPro initialSavedState={savedState} onSave={(state)=>{try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch{}}}/>;
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<AppWithStorage/>);
+</script>
+
+<script>
+if("serviceWorker" in navigator){
+  const swCode=`
+    const CACHE="meal-mgr-v4";
+    self.addEventListener("install",e=>{self.skipWaiting();});
+    self.addEventListener("activate",e=>{e.waitUntil(clients.claim());});
+    self.addEventListener("fetch",e=>{e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});
+  `;
+  const blob=new Blob([swCode],{type:"application/javascript"});
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+}
+</script>
+</body>
+</html>
